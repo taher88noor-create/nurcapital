@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 144 61% 20%;
+    --border: 214 32% 91%;
+    --ring: 142 71% 45%;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
+    --muted: 240 4% 10%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 144 61% 90%;
+    --border: 240 4% 14%;
+    --ring: 142 71% 45%;
+  }
+
+  * {
+    border-color: #e2e8f0;
+  }
+
+  .dark * {
+    border-color: #1e1e2e;
+  }
+
+  body {
+    @apply bg-surface text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .dark body {
+    @apply bg-surface-dark;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border bg-panel p-6 shadow-soft transition-shadow hover:shadow-card;
+    border-color: #e2e8f0;
+  }
+  .dark .card {
+    @apply bg-panel-dark;
+    border-color: #1e1e2e;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-green {
+    @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400;
+  }
+  .badge-red {
+    @apply bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400;
+  }
+  .badge-amber {
+    @apply bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400;
+  }
+  .badge-blue {
+    @apply bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400;
+  }
+  .badge-gray {
+    @apply bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400;
+  }
+}

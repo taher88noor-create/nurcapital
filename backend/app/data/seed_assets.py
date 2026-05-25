@@ -1,0 +1,80 @@
+"""
+Seed Data — Initial 5 MVP assets for the Nür Capital pipeline.
+"""
+
+MVP_ASSETS = [
+    {
+        "ticker": "TSM",
+        "company_name": "Taiwan Semiconductor Manufacturing",
+        "asset_type": "equity",
+        "exchange": "NYSE",
+        "country": "Taiwan",
+        "sector": "Technology",
+        "industry": "Semiconductors",
+        "description": "World's largest dedicated semiconductor foundry. Manufactures chips for Apple, NVIDIA, AMD, and others.",
+        "market_cap": 700_000_000_000,
+        "currency": "USD",
+        "website": "https://www.tsmc.com",
+    },
+    {
+        "ticker": "ASML",
+        "company_name": "ASML Holding",
+        "asset_type": "equity",
+        "exchange": "EURONEXT",
+        "country": "Netherlands",
+        "sector": "Technology",
+        "industry": "Semiconductor Equipment",
+        "description": "Sole manufacturer of extreme ultraviolet (EUV) lithography machines essential for advanced chip production.",
+        "market_cap": 350_000_000_000,
+        "currency": "EUR",
+        "website": "https://www.asml.com",
+    },
+    {
+        "ticker": "NVDA",
+        "company_name": "NVIDIA Corporation",
+        "asset_type": "equity",
+        "exchange": "NASDAQ",
+        "country": "US",
+        "sector": "Technology",
+        "industry": "Semiconductors",
+        "description": "Designs GPUs and AI accelerators for data centres, gaming, and autonomous systems.",
+        "market_cap": 3_000_000_000_000,
+        "currency": "USD",
+        "website": "https://www.nvidia.com",
+    },
+    {
+        "ticker": "1211.HK",
+        "company_name": "BYD Company",
+        "asset_type": "equity",
+        "exchange": "HKEX",
+        "country": "China",
+        "sector": "Consumer Discretionary",
+        "industry": "Electric Vehicles & Batteries",
+        "description": "Largest EV manufacturer globally. Also produces batteries, energy storage, and semiconductor components.",
+        "market_cap": 100_000_000_000,
+        "currency": "HKD",
+        "website": "https://www.byd.com",
+    },
+    {
+        "ticker": "HLAL",
+        "company_name": "Wahed FTSE USA Shariah ETF",
+        "asset_type": "etf",
+        "exchange": "NASDAQ",
+        "country": "US",
+        "sector": "Multi-Sector",
+        "industry": "Sharia-Compliant ETF",
+        "description": "Tracks the FTSE USA Shariah Index. Excludes non-compliant sectors and Israeli securities.",
+        "market_cap": 500_000_000,
+        "currency": "USD",
+        "website": "https://www.wahedinvest.com",
+    },
+]
+
+# Theme assignments for MVP assets
+MVP_THEME_ASSIGNMENTS = {
+    "TSM": ["Semiconductors", "AI Infrastructure"],
+    "ASML": ["Semiconductors"],
+    "NVDA": ["Semiconductors", "AI Infrastructure"],
+    "1211.HK": ["Battery Technology", "Clean Energy"],
+    "HLAL": ["Halal Finance"],
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nür Capital — Dashboard Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac',
+              400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d',
+              800: '#166534', 900: '#14532d', 950: '#052e16'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #0f172a; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.25rem; }
+    .text-muted-foreground { color: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen p-6 md:p-10">
+  <div class="mx-auto max-w-6xl space-y-8">
+
+    <!-- Navigation -->
+    <nav class="flex items-center gap-6 border-b border-slate-700 pb-4">
+      <span class="text-lg font-bold text-emerald-400">Nür Capital</span>
+      <a href="#" class="text-sm font-medium text-white">Dashboard</a>
+      <a href="#" class="text-sm text-muted-foreground hover:text-white">Assets</a>
+      <a href="#" class="text-sm text-muted-foreground hover:text-white">Portfolio</a>
+      <a href="#" class="text-sm text-muted-foreground hover:text-white">Themes</a>
+      <a href="#" class="text-sm text-muted-foreground hover:text-white">Research</a>
+    </nav>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-white">Dashboard</h1>
+        <p class="mt-1 text-sm text-muted-foreground">Ethical investment intelligence — MVP Pipeline</p>
+      </div>
+      <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700" onclick="alert('Pipeline would run here — fetches live Yahoo Finance data for 5 assets, runs eligibility screening, trend analysis, and risk scoring.')">
+        Run Pipeline
+      </button>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="card">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Assets</p>
+        <p class="mt-2 text-2xl font-bold text-white">5</p>
+      </div>
+      <div class="card">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Approved</p>
+        <p class="mt-2 text-2xl font-bold text-emerald-400">4</p>
+      </div>
+      <div class="card">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Rejected</p>
+        <p class="mt-2 text-2xl font-bold text-white">1</p>
+      </div>
+      <div class="card">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pipeline</p>
+        <p class="mt-2 text-2xl font-bold text-emerald-400">✓ Complete</p>
+      </div>
+    </div>
+
+    <!-- Approved Assets — Rankings -->
+    <div class="card">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Approved Assets — Ranked by Attractiveness
+      </h2>
+      <div class="space-y-3" id="approved-list"></div>
+    </div>
+
+    <!-- Rejected -->
+    <div class="card opacity-75">
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Rejected (Hard Exclusion)
+      </h2>
+      <div class="flex items-center gap-3 py-2 text-sm">
+        <span class="font-mono font-bold text-red-400">NVDA</span>
+        <span class="text-muted-foreground">NVIDIA Corporation</span>
+        <span class="ml-auto rounded-full bg-red-950 px-2 py-0.5 text-xs font-semibold text-red-400">Rejected</span>
+      </div>
+      <div class="mt-2 rounded bg-slate-800 p-3 text-xs text-muted-foreground">
+        <strong class="text-red-400">Reason:</strong> Israel exposure — NVIDIA has R&D operations in Israel (Mellanox acquisition). Fails hard exclusion rule.
+      </div>
+    </div>
+
+    <!-- Pipeline Stages -->
+    <div class="card">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        Pipeline Execution Log
+      </h2>
+      <div class="space-y-2 font-mono text-xs">
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 1]</span> Asset Ingestion — 5 assets loaded</div>
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 2]</span> Eligibility Engine — 4 approved, 1 rejected</div>
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 3]</span> Theme Classification — themes assigned</div>
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 4]</span> Market Data — 252 bars/asset (Yahoo Finance)</div>
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 5]</span> Trend & Momentum — MA50, MA200, RSI calculated</div>
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 6]</span> Risk Analysis — volatility, drawdown, geopolitical</div>
+        <div class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-muted-foreground">[Stage 7]</span> Opportunity Ranking — scored and ranked</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t border-slate-700 pt-4 text-center text-xs text-muted-foreground">
+      Nür Capital v0.1.0 — Staging Preview · Not a trading platform · Not financial advice
+    </div>
+  </div>
+
+  <script>
+    // Simulated pipeline results (realistic data)
+    const approvedAssets = [
+      {
+        rank: 1, ticker: "TSM", name: "Taiwan Semiconductor Manufacturing",
+        themes: ["Semiconductors", "AI Infrastructure"],
+        score: 62.4, price: 178.52, risk: "moderate", signal: "buy",
+        trend: 0.72, momentum: 0.58
+      },
+      {
+        rank: 2, ticker: "ASML", name: "ASML Holding",
+        themes: ["Semiconductors"],
+        score: 55.8, price: 924.30, risk: "moderate", signal: "buy",
+        trend: 0.61, momentum: 0.45
+      },
+      {
+        rank: 3, ticker: "HLAL", name: "Wahed FTSE USA Shariah ETF",
+        themes: ["Halal Finance"],
+        score: 48.2, price: 42.15, risk: "low", signal: "hold",
+        trend: 0.44, momentum: 0.38
+      },
+      {
+        rank: 4, ticker: "1211.HK", name: "BYD Company",
+        themes: ["Battery Technology", "Clean Energy"],
+        score: 41.6, price: 293.80, risk: "elevated", signal: "hold",
+        trend: 0.35, momentum: 0.29
+      }
+    ];
+
+    const signalColors = {
+      buy: "bg-emerald-950 text-emerald-400",
+      hold: "bg-blue-950 text-blue-400",
+      reduce: "bg-amber-950 text-amber-400"
+    };
+
+    const riskColors = {
+      low: "text-emerald-400",
+      moderate: "text-yellow-400",
+      elevated: "text-orange-400",
+      high: "text-red-400"
+    };
+
+    const list = document.getElementById('approved-list');
+    approvedAssets.forEach(asset => {
+      list.innerHTML += `
+        <div class="flex items-center gap-4 rounded-lg border border-slate-700 p-4 transition hover:border-slate-500">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-950 text-sm font-bold text-emerald-400">
+            ${asset.rank}
+          </span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-sm font-bold text-white">${asset.ticker}</span>
+              <span class="text-sm text-slate-300">${asset.name}</span>
+            </div>
+            <div class="mt-1 flex flex-wrap gap-1">
+              ${asset.themes.map(t => `<span class="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-300">${t}</span>`).join('')}
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-lg font-bold text-white">${asset.score}</p>
+            <p class="text-xs text-muted-foreground">score</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-white">$${asset.price.toFixed(2)}</p>
+            <p class="text-xs text-muted-foreground">price</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs ${riskColors[asset.risk]}">${asset.risk}</p>
+          </div>
+          <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold ${signalColors[asset.signal]}">
+            ${asset.signal.toUpperCase()}
+          </span>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>

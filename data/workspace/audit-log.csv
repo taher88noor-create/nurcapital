@@ -1,0 +1,54 @@
+Log ID,Timestamp,Action Type,Asset,Actor,Previous State,New State,Rationale,Confidence,Review Type
+001,2025-01-10 09:00,PORTFOLIO_REVIEW,—,Tahir,—,—,"Initial portfolio construction. Establishing core positions in Halal Finance ETFs (HLAL + SPUS) as foundation. Setting 30% cash reserve (Sideways regime).",HIGH,SCHEDULED
+002,2025-01-10 09:30,ALLOCATION_CHANGE,HLAL,Tahir,0%,12%,"Initiating core Sharia-compliant US equity position. HLAL provides broad diversified exposure with pre-screened compliance.",HIGH,AD_HOC
+003,2025-01-10 09:35,ALLOCATION_CHANGE,SPUS,Tahir,0%,8%,"Adding S&P 500 Sharia tracker as complement to HLAL. Broader index exposure.",HIGH,AD_HOC
+004,2025-02-01 10:00,ELIGIBILITY_DECISION,2222.SR,Tahir,(new),APPROVED,"All 7 flags CLEAR. Saudi Aramco is Sharia-compliant by structure. No prohibited exposure. Lowest-cost oil producer. Dividend anchor.",HIGH,SCHEDULED
+005,2025-02-01 10:30,THESIS_CREATED,2222.SR,Tahir,—,ACTIVE,"Created thesis 2222SR-2025-Q1: World's lowest-cost producer providing dividend income and energy security.",HIGH,AD_HOC
+006,2025-02-01 11:00,ALLOCATION_CHANGE,2222.SR,Tahir,0%,8%,"Initiating energy security position. 4%+ dividend yield. Defensive holding.",HIGH,AD_HOC
+007,2025-02-20 09:00,ELIGIBILITY_DECISION,LLY,Tahir,(new),APPROVED,"All flags CLEAR. Pharmaceutical company. No prohibited exposure. Conservative balance sheet. Passes all AAOIFI ratios.",HIGH,SCHEDULED
+008,2025-02-20 09:30,ELIGIBILITY_DECISION,NOVO-B,Tahir,(new),APPROVED,"All flags CLEAR. Danish pharma. No Israel operations. No prohibited exposure. Passes ratios.",HIGH,SCHEDULED
+009,2025-02-20 10:00,THESIS_CREATED,LLY,Tahir,—,ACTIVE,"Created thesis LLY-2025-Q1: GLP-1 category leader with $100B+ obesity TAM.",HIGH,AD_HOC
+010,2025-02-20 10:30,ALLOCATION_CHANGE,LLY,Tahir,0%,8%,"Initiating healthcare growth position. GLP-1 thesis. Strong pipeline.",HIGH,AD_HOC
+011,2025-02-20 10:35,ALLOCATION_CHANGE,NOVO-B,Tahir,0%,5%,"Adding GLP-1 diversification. Ozempic/Wegovy leader. Smaller position due to correction risk.",HIGH,AD_HOC
+012,2025-03-01 09:00,ELIGIBILITY_DECISION,CRWD,Tahir,(new),APPROVED,"All flags CLEAR. US cybersecurity SaaS. No Israel operations. No prohibited exposure. Debt/assets 22%. Clean.",HIGH,SCHEDULED
+013,2025-03-01 09:30,THESIS_CREATED,CRWD,Tahir,—,ACTIVE,"Created thesis CRWD-2025-Q1: Cloud-native endpoint security leader with AI-driven platform.",HIGH,AD_HOC
+014,2025-03-01 10:00,ALLOCATION_CHANGE,CRWD,Tahir,0%,7%,"Initiating cybersecurity position. Non-discretionary spend. Platform consolidation winner.",HIGH,AD_HOC
+015,2025-03-15 09:00,ELIGIBILITY_DECISION,TSM,Tahir,(new),APPROVED,"All flags CLEAR. Taiwan company. No Israel operations. Passes all AAOIFI ratios (debt/assets 28%). Foundry model is asset-heavy (compliant).",HIGH,SCHEDULED
+016,2025-03-15 09:15,ELIGIBILITY_DECISION,ASML,Tahir,(new),APPROVED,"All flags CLEAR. Dutch company. No Israel operations. Conservative balance sheet. Passes all ratios.",HIGH,SCHEDULED
+017,2025-03-15 09:30,ELIGIBILITY_DECISION,ABB,Tahir,(new),APPROVED,"All flags CLEAR. Swiss industrial. Divested power grids (no weapons). No Israel operations. Clean industrial automation.",HIGH,SCHEDULED
+018,2025-03-15 10:00,THESIS_CREATED,TSM,Tahir,—,ACTIVE,"Created thesis TSM-2025-Q1: Leading foundry with monopoly in advanced nodes.",HIGH,AD_HOC
+019,2025-03-15 10:15,THESIS_CREATED,ASML,Tahir,—,ACTIVE,"Created thesis ASML-2025-Q1: Sole EUV manufacturer with monopoly and multi-year backlog.",HIGH,AD_HOC
+020,2025-03-15 10:30,ALLOCATION_CHANGE,TSM,Tahir,0%,12%,"Initiating core semiconductor position. Largest allocation reflects highest conviction.",HIGH,AD_HOC
+021,2025-03-15 10:35,ALLOCATION_CHANGE,ASML,Tahir,0%,10%,"Initiating EUV monopoly position. Second-largest allocation.",HIGH,AD_HOC
+022,2025-03-15 10:40,ALLOCATION_CHANGE,ABB,Tahir,0%,6%,"Initiating defensive industrial position. Automation secular trend.",HIGH,AD_HOC
+023,2025-03-30 09:00,REGIME_CHANGE,—,Tahir,Sideways,Strong Bull,"Breakout confirmed. Breadth expanding to 75%. VIX at 12.8. Golden cross confirmed. All signals bullish. Reducing cash from 30% to 10%.",HIGH,SCHEDULED
+024,2025-04-01 09:00,ELIGIBILITY_DECISION,AMD,Tahir,(new),APPROVED,"All flags CLEAR. US semiconductor company. No Israel operations (unlike Intel). Passes all AAOIFI ratios.",HIGH,SCHEDULED
+025,2025-04-01 09:15,ELIGIBILITY_DECISION,AVGO,Tahir,(new),APPROVED,"All flags CLEAR. US semiconductor/software. No Israel operations. VMware acquisition funded but debt/assets still 31% (below 33% threshold).",HIGH,SCHEDULED
+026,2025-04-01 09:30,THESIS_CREATED,AMD,Tahir,—,ACTIVE,"Created thesis AMD-2025-Q2: CPU/GPU competitor gaining AI accelerator share with MI300.",HIGH,AD_HOC
+027,2025-04-01 10:00,ALLOCATION_CHANGE,AMD,Tahir,0%,7%,"Initiating AI accelerator position. MI300 gaining traction. Clean alternative to NVIDIA.",HIGH,AD_HOC
+028,2025-04-01 10:05,ALLOCATION_CHANGE,AVGO,Tahir,0%,7%,"Initiating custom AI chip position. Google TPU + Meta ASIC. Networking dominance.",HIGH,AD_HOC
+029,2025-04-15 09:00,ELIGIBILITY_DECISION,PANW,Tahir,(new),APPROVED,"All flags CLEAR. US cybersecurity. No Israel operations. Passes all ratios. Platform consolidation leader.",HIGH,SCHEDULED
+030,2025-04-15 09:30,ALLOCATION_CHANGE,PANW,Tahir,0%,5%,"Adding second cybersecurity position. Platform consolidation thesis. Diversifies CRWD single-name risk.",HIGH,AD_HOC
+031,2025-05-01 09:00,PORTFOLIO_REVIEW,—,Tahir,—,—,"Monthly review. All positions within concentration limits. No drift alerts. Semiconductor theme at 36% (approaching 35% soft limit — monitor). Performance: +5.2% MTD. No rebalance needed.",HIGH,SCHEDULED
+032,2025-05-10 14:00,WATCHLIST_ADDED,PDD,Tahir,(new),WATCHLIST,"PDD Holdings marketplace model under review. Unclear if Temu facilitates prohibited product sales at material scale. Need category revenue breakdown.",LOW,TRIGGERED
+033,2025-05-12 10:00,WATCHLIST_ADDED,GRAB,Tahir,(new),WATCHLIST,"GrabFin lending at 4.2% of revenue — approaching 5% threshold. Need Q2 data.",MEDIUM,TRIGGERED
+034,2025-05-12 10:30,WATCHLIST_ADDED,MELI,Tahir,(new),WATCHLIST,"Mercado Credito lending at ~8% of revenue. Likely exceeds threshold. Monitoring for potential rejection.",MEDIUM,TRIGGERED
+035,2025-05-14 09:00,WATCHLIST_ADDED,UNH,Tahir,(new),WATCHLIST,"Insurance investment income at ~4.5% of revenue. Borderline. Need updated 10-K breakdown.",MEDIUM,TRIGGERED
+036,2025-05-15 09:00,WATCHLIST_ADDED,BABA,Tahir,(new),WATCHLIST,"Ant Financial interest-based revenue unclear. Need Q2 consolidated financials. Previous estimate 4.8% (borderline).",LOW,TRIGGERED
+037,2025-05-20 09:00,ELIGIBILITY_DECISION,NVDA,Tahir,(new),REJECTED,"Israel exposure via Mellanox acquisition. 3,000+ employees in Israel R&D. Hard exclusion triggered.",HIGH,SCHEDULED
+038,2025-05-20 09:05,ELIGIBILITY_DECISION,MSFT,Tahir,(new),REJECTED,"Significant Israel operations. Azure data centre + 2,000+ R&D employees. Hard exclusion.",HIGH,SCHEDULED
+039,2025-05-20 09:10,ELIGIBILITY_DECISION,INTC,Tahir,(new),REJECTED,"Intel Israel is largest private employer (12,000+). $25B fab investment. Hard exclusion.",HIGH,SCHEDULED
+040,2025-05-20 09:15,ELIGIBILITY_DECISION,SEDG,Tahir,(new),REJECTED,"Israel-headquartered (Herzliya). Automatic rejection.",HIGH,SCHEDULED
+041,2025-05-20 09:20,ELIGIBILITY_DECISION,CHKP,Tahir,(new),REJECTED,"Israel-headquartered (Tel Aviv). Automatic rejection.",HIGH,SCHEDULED
+042,2025-05-20 09:25,ELIGIBILITY_DECISION,CYBR,Tahir,(new),REJECTED,"Israel-headquartered (Petah Tikva). Automatic rejection.",HIGH,SCHEDULED
+043,2025-05-20 09:30,ELIGIBILITY_DECISION,LMT,Tahir,(new),REJECTED,"Weapons manufacturer + Israel defence contracts. Dual exclusion.",HIGH,SCHEDULED
+044,2025-05-20 09:35,ELIGIBILITY_DECISION,RTX,Tahir,(new),REJECTED,"Weapons systems + Iron Dome components for Israel. Dual exclusion.",HIGH,SCHEDULED
+045,2025-05-20 09:40,ELIGIBILITY_DECISION,JPM,Tahir,(new),REJECTED,"Interest-based finance is core business (52% of revenue). Hard exclusion.",HIGH,SCHEDULED
+046,2025-05-20 09:45,ELIGIBILITY_DECISION,GS,Tahir,(new),REJECTED,"Investment banking + interest income >30% of revenue. Hard exclusion.",HIGH,SCHEDULED
+047,2025-05-20 09:50,ELIGIBILITY_DECISION,DKNG,Tahir,(new),REJECTED,"Online gambling is 100% of revenue. Hard exclusion.",HIGH,SCHEDULED
+048,2025-05-20 09:55,ELIGIBILITY_DECISION,FLUT,Tahir,(new),REJECTED,"Global gambling conglomerate (FanDuel/Paddy Power). 100% gambling revenue.",HIGH,SCHEDULED
+049,2025-05-20 10:00,ELIGIBILITY_DECISION,DEO,Tahir,(new),REJECTED,"Alcohol manufacturer (100% revenue from spirits/beer). Hard exclusion.",HIGH,SCHEDULED
+050,2025-05-20 10:05,ELIGIBILITY_DECISION,WYNN,Tahir,(new),REJECTED,"Casino operator. Gambling revenue >70%. Hard exclusion.",HIGH,SCHEDULED
+051,2025-05-20 10:10,ELIGIBILITY_DECISION,MGM,Tahir,(new),REJECTED,"Casino operator + BetMGM online gambling. Hard exclusion.",HIGH,SCHEDULED
+052,2025-05-25 09:00,REGIME_CHANGE,—,Tahir,Strong Bull,Weak Bull,"Confirmed after 2 weeks. Breadth at 55% (was 72%). VIX 18.5 (was 12). Adjusting: cash target 20% (was 10%), max position 12% (was 15%). No immediate trim needed — all positions within new limits.",HIGH,SCHEDULED
+053,2025-05-25 09:30,ALLOCATION_CHANGE,HLAL,Tahir,12%,15%,"Increasing core Sharia-compliant anchor in Weak Bull regime. Defensive reallocation from cash overshoot.",HIGH,TRIGGERED

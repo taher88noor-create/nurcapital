@@ -1,0 +1,13 @@
+# Netlify Configuration — Nür Capital Frontend
+# Next.js deployment with Netlify's built-in Next.js runtime
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Next.js plugin handles SSR/ISR automatically
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

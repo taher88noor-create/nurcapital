@@ -1,0 +1,18 @@
+# Render Blueprint — Nür Capital Backend
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: nurcapital-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements-prod.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false  # Set manually to your Netlify URL
+      - key: PYTHON_VERSION
+        value: "3.11"
+    healthCheckPath: /api/health
