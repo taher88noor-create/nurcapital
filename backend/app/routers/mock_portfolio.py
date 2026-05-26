@@ -210,6 +210,35 @@ async def api_refresh_prices():
     }
 
 
+class FetchTickersRequest(BaseModel):
+    tickers: list[str]
+
+
+@router.post("/prices/fetch")
+async def api_fetch_prices_for_tickers(req: FetchTickersRequest):
+    """Fetch latest prices for a list of tickers (used by recommendation tracker)."""
+    from app.services.market_data_service import fetch_prices
+    from app.models.market_data import FetchRequest
+
+    price_map = {}
+    errors = []
+
+    for ticker in req.tickers:
+        try:
+            result = await fetch_prices(FetchRequest(ticker=ticker, days=5))
+            if result.success and result.bars:
+                price_map[ticker] = result.bars[-1].close
+        except Exception as e:
+            errors.append({"ticker": ticker, "error": str(e)})
+
+    return {
+        "prices": price_map,
+        "errors": errors,
+        "fetched": len(price_map),
+        "failed": len(errors),
+    }
+
+
 # ── Transactions ──────────────────────────────────────────────────────────────
 
 @router.get("/transactions")
