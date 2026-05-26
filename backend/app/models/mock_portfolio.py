@@ -1,8 +1,8 @@
 """
-Mock Portfolio Models — Paper portfolio tracking for methodology validation.
+Mock Portfolio Models — Paper portfolio with true position tracking.
 
 This is NOT live trading. This is a simulation system for validating
-the Nür Capital investment methodology.
+the Nür Capital investment methodology with real market prices.
 """
 
 from datetime import date, datetime
@@ -33,14 +33,28 @@ class ConvictionLevel(str, Enum):
     LOW = "low"
 
 
+class TransactionType(str, Enum):
+    BUY = "buy"
+    REDUCE = "reduce"
+    EXIT = "exit"
+    REBALANCE = "rebalance"
+    CASH_ADJUSTMENT = "cash_adjustment"
+
+
 class Position(BaseModel):
-    """A single position in the mock portfolio."""
+    """A single position with true quantity tracking."""
     ticker: str
     company_name: str
     entry_date: date
     entry_price: float
     current_price: float = 0.0
+    quantity: float = 0.0
+    invested_amount: float = 0.0
+    current_value: float = 0.0
+    unrealized_pnl: float = 0.0
+    return_pct: float = 0.0
     target_allocation_pct: float = Field(ge=0, le=15)
+    actual_allocation_pct: float = 0.0
     theme: str = ""
     conviction: ConvictionLevel = ConvictionLevel.MEDIUM
     signal: PortfolioSignal = PortfolioSignal.HOLD
@@ -49,20 +63,41 @@ class Position(BaseModel):
     notes: str = ""
 
 
+class Transaction(BaseModel):
+    """A single transaction in the portfolio journal."""
+    id: int = 0
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    transaction_type: TransactionType
+    ticker: str = ""
+    company_name: str = ""
+    price: float = 0.0
+    quantity: float = 0.0
+    amount: float = 0.0
+    allocation_pct: float = 0.0
+    rationale: str = ""
+    regime_at_time: MarketRegime = MarketRegime.WEAK_BULL
+
+
 class PortfolioState(BaseModel):
     """Complete mock portfolio state."""
     positions: list[Position] = []
-    cash_pct: float = 100.0
+    cash_balance: float = 100000.0
     starting_capital: float = 100000.0
     regime: MarketRegime = MarketRegime.WEAK_BULL
     last_review_date: Optional[date] = None
+    last_price_refresh: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class PortfolioMetrics(BaseModel):
     """Calculated portfolio metrics."""
-    total_value: float
+    starting_capital: float
+    total_invested: float
+    total_current_value: float
+    total_portfolio_value: float
+    total_unrealized_pnl: float
     total_return_pct: float
+    cash_balance: float
     cash_pct: float
     equity_pct: float
     position_count: int
@@ -72,17 +107,24 @@ class PortfolioMetrics(BaseModel):
     regime: MarketRegime
 
 
-class PositionPerformance(BaseModel):
-    """Performance data for a single position."""
+class PositionDetail(BaseModel):
+    """Full position detail for dashboard display."""
     ticker: str
     company_name: str
     entry_price: float
     current_price: float
+    quantity: float
+    invested_amount: float
+    current_value: float
+    unrealized_pnl: float
     return_pct: float
-    allocation_pct: float
+    target_allocation_pct: float
+    actual_allocation_pct: float
+    allocation_drift_pct: float
     theme: str
     signal: PortfolioSignal
     conviction: ConvictionLevel
+    entry_date: date
 
 
 class WeeklyReview(BaseModel):
@@ -104,7 +146,7 @@ class ThesisRecord(BaseModel):
     company_name: str
     thesis_id: str
     created_date: date
-    status: str = "active"  # active, validated, invalidated, expired
+    status: str = "active"
     conviction: ConvictionLevel
     thesis_statement: str
     macro_drivers: list[str] = []
