@@ -287,56 +287,79 @@ function PortfolioTab({ data, regimeLabels }: { data: DashboardData; regimeLabel
 // ── Mock Buy Tab ─────────────────────────────────────────────────────────────
 
 function BuyTab({ cashBalance, onComplete }: { cashBalance: number; onComplete: () => void }) {
-  const [ticker, setTicker] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  // Recommended approved assets (only BUY/HOLD eligible)
+  const recommendedAssets = [
+    { ticker: "TSM", name: "Taiwan Semiconductor", theme: "Semiconductors", signal: "BUY", price: 178.52, conviction: "high", risk: "moderate" },
+    { ticker: "ASML", name: "ASML Holding", theme: "Semiconductors", signal: "BUY", price: 924.30, conviction: "high", risk: "moderate" },
+    { ticker: "HLAL", name: "Wahed FTSE USA Shariah ETF", theme: "Halal Finance", signal: "HOLD", price: 42.15, conviction: "high", risk: "low" },
+    { ticker: "SPUS", name: "SP Funds S&P 500 Sharia ETF", theme: "Halal Finance", signal: "HOLD", price: 34.82, conviction: "high", risk: "low" },
+    { ticker: "LLY", name: "Eli Lilly", theme: "Healthcare", signal: "BUY", price: 820.40, conviction: "high", risk: "moderate" },
+    { ticker: "CRWD", name: "CrowdStrike", theme: "Cybersecurity", signal: "BUY", price: 355.20, conviction: "high", risk: "moderate" },
+    { ticker: "PANW", name: "Palo Alto Networks", theme: "Cybersecurity", signal: "BUY", price: 185.60, conviction: "high", risk: "moderate" },
+    { ticker: "AMD", name: "Advanced Micro Devices", theme: "Semiconductors", signal: "BUY", price: 162.30, conviction: "high", risk: "moderate" },
+    { ticker: "AVGO", name: "Broadcom", theme: "Semiconductors", signal: "BUY", price: 178.50, conviction: "high", risk: "moderate" },
+    { ticker: "NOVO-B", name: "Novo Nordisk", theme: "Healthcare", signal: "HOLD", price: 128.50, conviction: "high", risk: "moderate" },
+    { ticker: "JNJ", name: "Johnson & Johnson", theme: "Healthcare", signal: "HOLD", price: 155.80, conviction: "high", risk: "low" },
+    { ticker: "ABB", name: "ABB Ltd", theme: "Industrial Automation", signal: "HOLD", price: 52.80, conviction: "high", risk: "low" },
+    { ticker: "2222.SR", name: "Saudi Aramco", theme: "Oil & Gas", signal: "HOLD", price: 8.25, conviction: "high", risk: "low" },
+    { ticker: "NEE", name: "NextEra Energy", theme: "Clean Energy", signal: "HOLD", price: 78.90, conviction: "high", risk: "low" },
+    { ticker: "QISMUT", name: "Qatar Islamic Bank", theme: "Islamic Banking", signal: "HOLD", price: 5.20, conviction: "high", risk: "low" },
+    { ticker: "XOM", name: "Exxon Mobil", theme: "Oil & Gas", signal: "HOLD", price: 108.20, conviction: "high", risk: "moderate" },
+    { ticker: "1211.HK", name: "BYD Company", theme: "Battery Technology", signal: "HOLD", price: 293.80, conviction: "medium", risk: "elevated" },
+    { ticker: "CATL", name: "CATL", theme: "Battery Technology", signal: "HOLD", price: 48.20, conviction: "medium", risk: "elevated" },
+  ];
+
+  const [selectedAsset, setSelectedAsset] = useState<typeof recommendedAssets[0] | null>(null);
   const [amount, setAmount] = useState("");
-  const [theme, setTheme] = useState("");
   const [conviction, setConviction] = useState("high");
   const [thesis, setThesis] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [fetchingPrice, setFetchingPrice] = useState(false);
-  const [livePrice, setLivePrice] = useState<number | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const fetchPrice = async () => {
-    if (!ticker) return;
-    setFetchingPrice(true);
-    try {
-      const res = await fetch(`${API_URL}/api/mock-portfolio/prices/refresh`, { method: "POST" });
-      const json = await res.json();
-      if (json.prices && json.prices[ticker.toUpperCase()]) {
-        setLivePrice(json.prices[ticker.toUpperCase()]);
-      }
-    } catch { /* ignore */ }
-    setFetchingPrice(false);
+  const estimatedQty = selectedAsset && amount ? parseFloat(amount) / selectedAsset.price : 0;
+  const allocationPct = amount ? (parseFloat(amount) / 100000) * 100 : 0;
+
+  const handleSelectAsset = (ticker: string) => {
+    const asset = recommendedAssets.find((a) => a.ticker === ticker);
+    setSelectedAsset(asset || null);
+    if (asset) {
+      setConviction(asset.conviction);
+    }
+    setShowConfirmation(false);
+    setResult(null);
+  };
+
+  const handleReview = () => {
+    if (!selectedAsset || !amount) { setResult("Select an asset and enter an amount."); return; }
+    if (parseFloat(amount) > cashBalance) { setResult(`Insufficient cash. Available: $${cashBalance.toLocaleString()}`); return; }
+    if (allocationPct > 15) { setResult("Max single position is 15% ($15,000). Reduce amount."); return; }
+    setResult(null);
+    setShowConfirmation(true);
   };
 
   const handleBuy = async () => {
-    if (!ticker || !amount || !companyName) { setResult("Fill in ticker, company name, and amount."); return; }
-    const allocationPct = (parseFloat(amount) / 100000) * 100; // Based on $100k starting capital
-    if (parseFloat(amount) > cashBalance) { setResult(`Insufficient cash. Available: $${cashBalance.toLocaleString()}`); return; }
-
+    if (!selectedAsset || !amount) return;
     setSubmitting(true);
     try {
-      const entryPrice = livePrice || parseFloat(amount) / 10; // Fallback
       const res = await fetch(`${API_URL}/api/mock-portfolio/positions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ticker: ticker.toUpperCase(),
-          company_name: companyName,
-          entry_price: entryPrice,
+          ticker: selectedAsset.ticker,
+          company_name: selectedAsset.name,
+          entry_price: selectedAsset.price,
           allocation_pct: Math.min(allocationPct, 15),
-          theme,
+          theme: selectedAsset.theme,
           conviction,
           signal: "buy",
           thesis_summary: thesis,
-          rationale: `Mock buy: $${amount} of ${ticker.toUpperCase()} at $${entryPrice.toFixed(2)}`,
+          rationale: `Mock buy: $${amount} of ${selectedAsset.ticker} at $${selectedAsset.price.toFixed(2)}. Thesis: ${thesis || "N/A"}`,
         }),
       });
       const json = await res.json();
       if (res.ok) {
-        setResult(`✓ Mock bought ${json.position?.quantity?.toFixed(2)} shares of ${ticker.toUpperCase()} at $${entryPrice.toFixed(2)}`);
+        setResult(`✓ Mock bought ${json.position?.quantity?.toFixed(2) || estimatedQty.toFixed(2)} shares of ${selectedAsset.ticker} at $${selectedAsset.price.toFixed(2)}`);
         setTimeout(onComplete, 1500);
       } else {
         setResult(`✗ ${json.detail || "Failed to execute mock buy"}`);
@@ -345,79 +368,119 @@ function BuyTab({ cashBalance, onComplete }: { cashBalance: number; onComplete: 
       setResult("✗ Network error");
     }
     setSubmitting(false);
+    setShowConfirmation(false);
   };
 
   return (
     <div className="card max-w-2xl space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Mock Buy</h2>
-        <p className="text-sm text-muted-foreground">Simulate purchasing a position with real market prices. No real trade is executed.</p>
-        <p className="mt-2 text-sm">Available cash: <strong>${cashBalance.toLocaleString()}</strong></p>
+        <h2 className="text-lg font-semibold">Mock Buy — Simulate Position</h2>
+        <p className="text-sm text-muted-foreground">Select an approved asset and simulate a purchase. No real trade is executed.</p>
+        <p className="mt-2 text-sm">Available cash: <strong className="text-emerald-600">${cashBalance.toLocaleString()}</strong></p>
       </div>
 
+      {/* Asset Selection Dropdown */}
+      <div>
+        <label className="text-xs font-medium uppercase text-muted-foreground">Select Recommended Asset</label>
+        <select
+          value={selectedAsset?.ticker || ""}
+          onChange={(e) => handleSelectAsset(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2.5 text-sm dark:border-border-dark dark:bg-panel-dark"
+        >
+          <option value="">Choose an approved asset...</option>
+          {recommendedAssets.map((a) => (
+            <option key={a.ticker} value={a.ticker}>
+              {a.ticker} — {a.name} — {a.theme} — {a.signal}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-[10px] text-muted-foreground">Only APPROVED assets with BUY or HOLD signals are shown. Watchlist and rejected assets are not eligible.</p>
+      </div>
+
+      {/* Auto-populated asset details */}
+      {selectedAsset && (
+        <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <div><span className="text-[10px] uppercase text-muted-foreground">Ticker</span><p className="font-mono font-bold">{selectedAsset.ticker}</p></div>
+            <div><span className="text-[10px] uppercase text-muted-foreground">Theme</span><p>{selectedAsset.theme}</p></div>
+            <div><span className="text-[10px] uppercase text-muted-foreground">Price</span><p className="font-mono">${selectedAsset.price.toFixed(2)}</p></div>
+            <div><span className="text-[10px] uppercase text-muted-foreground">Signal</span><p><span className={`badge ${selectedAsset.signal === "BUY" ? "badge-green" : "badge-blue"}`}>{selectedAsset.signal}</span></p></div>
+            <div><span className="text-[10px] uppercase text-muted-foreground">Risk</span><p>{selectedAsset.risk}</p></div>
+            <div><span className="text-[10px] uppercase text-muted-foreground">Conviction</span><p>{selectedAsset.conviction}</p></div>
+          </div>
+        </div>
+      )}
+
+      {/* Amount and Thesis */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-xs font-medium uppercase text-muted-foreground">Ticker</label>
-          <input value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} placeholder="e.g. TSM"
+          <label className="text-xs font-medium uppercase text-muted-foreground">Amount to Allocate ($)</label>
+          <input type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setShowConfirmation(false); }} placeholder="e.g. 12000" max="15000"
             className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark" />
+          {amount && <p className="mt-1 text-[10px] text-muted-foreground">= {allocationPct.toFixed(1)}% of portfolio{allocationPct > 15 ? " ⚠ exceeds 15% limit" : ""}</p>}
         </div>
         <div>
-          <label className="text-xs font-medium uppercase text-muted-foreground">Company Name</label>
-          <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Taiwan Semiconductor"
-            className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark" />
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase text-muted-foreground">Amount ($)</label>
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 12000"
-            className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark" />
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase text-muted-foreground">Theme</label>
-          <select value={theme} onChange={(e) => setTheme(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark">
-            <option value="">Select theme...</option>
-            <option>Semiconductors</option><option>AI Infrastructure</option><option>Cybersecurity</option>
-            <option>Healthcare</option><option>Halal Finance</option><option>Oil & Gas</option>
-            <option>Clean Energy</option><option>Battery Technology</option><option>Industrial Automation</option>
-            <option>Islamic Banking</option><option>Energy Infrastructure</option><option>Manufacturing</option>
-          </select>
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase text-muted-foreground">Conviction</label>
+          <label className="text-xs font-medium uppercase text-muted-foreground">Conviction Level</label>
           <select value={conviction} onChange={(e) => setConviction(e.target.value)}
             className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark">
-            <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+            <option value="high">High — Strong thesis, clear catalysts</option>
+            <option value="medium">Medium — Reasonable thesis, some uncertainty</option>
+            <option value="low">Low — Speculative, limited data</option>
           </select>
-        </div>
-        <div>
-          <label className="text-xs font-medium uppercase text-muted-foreground">Live Price</label>
-          <div className="mt-1 flex gap-2">
-            <span className="flex-1 rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark">
-              {livePrice ? `$${livePrice.toFixed(2)}` : "—"}
-            </span>
-            <button onClick={fetchPrice} disabled={fetchingPrice || !ticker}
-              className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-slate-50 disabled:opacity-50 dark:border-border-dark dark:hover:bg-slate-800">
-              {fetchingPrice ? "..." : "Fetch"}
-            </button>
-          </div>
         </div>
       </div>
 
       <div>
-        <label className="text-xs font-medium uppercase text-muted-foreground">Investment Thesis</label>
-        <textarea value={thesis} onChange={(e) => setThesis(e.target.value)} rows={3} placeholder="Why are you buying this asset? What's the thesis?"
+        <label className="text-xs font-medium uppercase text-muted-foreground">Investment Thesis (required)</label>
+        <textarea value={thesis} onChange={(e) => setThesis(e.target.value)} rows={3}
+          placeholder="Why are you buying this asset? What macro trends support it? What would invalidate this thesis?"
           className="mt-1 w-full rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark" />
       </div>
 
-      <div className="flex items-center gap-4">
-        <button onClick={handleBuy} disabled={submitting || !ticker || !amount}
-          className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
-          {submitting ? "Processing..." : "Execute Mock Buy"}
-        </button>
-        {result && <p className={`text-sm ${result.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{result}</p>}
-      </div>
+      {/* Estimated Quantity Preview */}
+      {selectedAsset && amount && parseFloat(amount) > 0 && (
+        <div className="rounded-lg border border-brand-200 bg-brand-50 p-3 dark:border-brand-800 dark:bg-brand-950/30">
+          <p className="text-sm">
+            <strong>Estimated quantity:</strong> {estimatedQty.toFixed(2)} shares of {selectedAsset.ticker} at ${selectedAsset.price.toFixed(2)}/share
+          </p>
+        </div>
+      )}
 
-      <p className="text-[11px] text-muted-foreground">This is a simulated purchase. No real money is spent. No broker is contacted.</p>
+      {/* Confirmation Preview */}
+      {showConfirmation && selectedAsset && (
+        <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-700 dark:bg-emerald-950/30">
+          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Confirm Mock Buy</p>
+          <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">
+            You are about to simulate buying <strong>${parseFloat(amount).toLocaleString()}</strong> of <strong>{selectedAsset.ticker}</strong> ({selectedAsset.name}) at <strong>${selectedAsset.price.toFixed(2)}</strong>.
+          </p>
+          <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">
+            Estimated quantity: <strong>{estimatedQty.toFixed(2)} shares</strong>. Allocation: <strong>{allocationPct.toFixed(1)}%</strong>.
+          </p>
+          <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-500">No real trade will be executed. This is a paper portfolio simulation.</p>
+          <div className="mt-3 flex gap-3">
+            <button onClick={handleBuy} disabled={submitting}
+              className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+              {submitting ? "Processing..." : "Confirm Mock Buy"}
+            </button>
+            <button onClick={() => setShowConfirmation(false)}
+              className="rounded-lg border border-emerald-300 px-5 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-400">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Review Button (before confirmation) */}
+      {!showConfirmation && (
+        <button onClick={handleReview} disabled={!selectedAsset || !amount || !thesis}
+          className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+          Review Mock Buy
+        </button>
+      )}
+
+      {result && <p className={`text-sm ${result.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{result}</p>}
+
+      <p className="text-[11px] text-muted-foreground">This is a simulated purchase. No real money is spent. No broker is contacted. Only APPROVED assets are eligible.</p>
     </div>
   );
 }
