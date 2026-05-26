@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: "◎" },
-  { name: "Approved Assets", href: "/assets", icon: "◆" },
-  { name: "Themes", href: "/themes", icon: "◐" },
-  { name: "Portfolio", href: "/portfolio", icon: "▣" },
-  { name: "Research", href: "/research", icon: "◉" },
+  { name: "Recommendation Performance", href: "/research", icon: "◆" },
+  { name: "Screening Principles", href: "/assets", icon: "◐" },
+  { name: "Themes", href: "/themes", icon: "◉" },
+  { name: "Research Notes", href: "/portfolio", icon: "▣" },
 ];
 
 export function Sidebar() {
