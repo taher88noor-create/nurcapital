@@ -142,9 +142,17 @@ export default function MockPortfolioPage() {
           <p className="mt-1 text-sm text-muted-foreground">Mock positions with real market prices — no real trades executed</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`badge ${dataSource === "live" ? "badge-green" : "badge-amber"}`}>
-            {dataSource === "live" ? "● Live Prices" : "● Staged Data"}
-          </span>
+          <div className="text-right">
+            <span className={`badge ${dataSource === "live" ? "badge-green" : "badge-amber"}`}>
+              {dataSource === "live" ? "● Live Prices" : "● Staged Data"}
+            </span>
+            {dataSource === "staged" && (
+              <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Demo values, not live market prices</p>
+            )}
+            {dataSource === "live" && data.last_price_refresh && (
+              <p className="mt-1 text-[10px] text-muted-foreground">Refreshed: {new Date(data.last_price_refresh).toLocaleString()}</p>
+            )}
+          </div>
           <button onClick={refreshPrices} disabled={refreshing}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
             {refreshing ? "Refreshing..." : "Refresh Prices"}
@@ -188,7 +196,12 @@ function PortfolioTab({ data, regimeLabels }: { data: DashboardData; regimeLabel
     <div className="space-y-6">
       {/* Summary */}
       <div className="card">
-        <div className="mb-2 text-xs font-medium uppercase text-muted-foreground">Portfolio Value = Cash + Market Value of Open Positions</div>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-medium uppercase text-muted-foreground">Portfolio Summary</span>
+          <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-muted-foreground dark:bg-slate-800">
+            Portfolio Value = Cash Balance + Current Value of Open Positions
+          </span>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Starting Capital" value={`$${m.starting_capital.toLocaleString()}`} />
           <Stat label="Portfolio Value" value={`$${m.total_portfolio_value.toLocaleString()}`} />
