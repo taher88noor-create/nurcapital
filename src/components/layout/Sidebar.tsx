@@ -6,9 +6,8 @@ import { usePathname } from "next/navigation";
 const navigation = [
   { name: "Dashboard", href: "/", icon: "◎" },
   { name: "Recommendation Performance", href: "/research", icon: "◆" },
-  { name: "Screening Principles", href: "/assets", icon: "◐" },
-  { name: "Themes", href: "/themes", icon: "◉" },
-  { name: "Research Notes", href: "/portfolio", icon: "▣" },
+  { name: "Themes", href: "/themes", icon: "◐" },
+  { name: "Research Notes", href: "/notes", icon: "◉" },
 ];
 
 export function Sidebar() {
