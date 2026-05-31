@@ -1,155 +1,92 @@
 "use client";
 
-import { MOCK_ASSETS, MOCK_THEMES } from "@/data/mock-data";
-import type { Asset, Theme } from "@/data/mock-data";
-
-// Static recommendation data (loads instantly)
-const LATEST_BUYS = [
-  { ticker: "PANW", company: "Palo Alto Networks", theme: "Cybersecurity", signalDate: "2025-04-15", signalPrice: 180.40, currentPrice: 185.60, returnPct: 2.88 },
-  { ticker: "AMD", company: "Advanced Micro Devices", theme: "Semiconductors", signalDate: "2025-04-01", signalPrice: 155.40, currentPrice: 162.30, returnPct: 4.44 },
-  { ticker: "AVGO", company: "Broadcom", theme: "Semiconductors", signalDate: "2025-04-01", signalPrice: 168.20, currentPrice: 178.50, returnPct: 6.12 },
-  { ticker: "TSM", company: "Taiwan Semiconductor", theme: "Semiconductors", signalDate: "2025-03-15", signalPrice: 165.20, currentPrice: 178.52, returnPct: 8.06 },
-  { ticker: "CRWD", company: "CrowdStrike", theme: "Cybersecurity", signalDate: "2025-03-01", signalPrice: 322.80, currentPrice: 355.20, returnPct: 10.04 },
-];
-
-const THEME_PERFORMANCE = [
-  { theme: "Semiconductors", avgReturn: 5.97, count: 4 },
-  { theme: "Cybersecurity", avgReturn: 6.46, count: 2 },
-  { theme: "Healthcare", avgReturn: 3.09, count: 2 },
-  { theme: "Halal Finance", avgReturn: 3.44, count: 1 },
-  { theme: "Oil & Gas", avgReturn: 2.87, count: 1 },
-  { theme: "Industrial Automation", avgReturn: 4.35, count: 1 },
-  { theme: "Clean Energy", avgReturn: -6.42, count: 1 },
-];
-
 export default function DashboardPage() {
-  const approved = MOCK_ASSETS.filter((a) => a.eligibilityStatus === "approved");
-  const watchlist = MOCK_ASSETS.filter((a) => a.eligibilityStatus === "watchlist");
-  const rejected = MOCK_ASSETS.filter((a) => a.eligibilityStatus === "rejected");
-
-  const avgBuyReturn = LATEST_BUYS.reduce((sum, b) => sum + b.returnPct, 0) / LATEST_BUYS.length;
-  const bestSignal = [...LATEST_BUYS].sort((a, b) => b.returnPct - a.returnPct)[0];
-  const worstSignal = [...LATEST_BUYS].sort((a, b) => a.returnPct - b.returnPct)[0];
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Intelligence Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ethical investment intelligence — recommendation tracking and research
+          What does Nür Capital recommend today?
         </p>
       </div>
 
-      {/* Recommendation Performance Summary */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card">
-          <p className="text-[11px] font-medium uppercase text-muted-foreground">Active BUY Signals</p>
-          <p className="mt-1 text-2xl font-bold">7</p>
-          <p className="mt-1 text-xs text-muted-foreground">Since Feb 2025</p>
-        </div>
-        <div className="card">
-          <p className="text-[11px] font-medium uppercase text-muted-foreground">Avg BUY Return</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">+{avgBuyReturn.toFixed(1)}%</p>
-          <p className="mt-1 text-xs text-muted-foreground">Performance since signal</p>
-        </div>
-        <div className="card">
-          <p className="text-[11px] font-medium uppercase text-muted-foreground">Best Signal</p>
-          <p className="mt-1 text-lg font-bold">{bestSignal.ticker}</p>
-          <p className="text-xs text-emerald-600 dark:text-emerald-400">+{bestSignal.returnPct.toFixed(1)}% since {bestSignal.signalDate}</p>
-        </div>
-        <div className="card">
-          <p className="text-[11px] font-medium uppercase text-muted-foreground">Market Regime</p>
-          <p className="mt-1 text-lg font-bold text-blue-600 dark:text-blue-400">Weak Bull</p>
-          <p className="text-xs text-muted-foreground">Quality + Defensive posture</p>
-        </div>
-      </div>
-
-      {/* Latest BUY Recommendations */}
-      <div className="card">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      {/* Section 1 — Latest BUY Recommendations */}
+      <section className="card">
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Latest BUY Recommendations
         </h2>
         <div className="space-y-3">
-          {LATEST_BUYS.map((rec) => (
-            <div key={rec.ticker} className="flex items-center gap-4 rounded-lg border border-border p-3 dark:border-border-dark">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-bold">{rec.ticker}</span>
-                  <span className="text-sm text-foreground">{rec.company}</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{rec.theme}</span>
-                </div>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">Signal: {rec.signalDate} at ${rec.signalPrice.toFixed(2)}</p>
-              </div>
-              <div className="text-right">
-                <p className={`text-sm font-bold ${rec.returnPct >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                  {rec.returnPct >= 0 ? "+" : ""}{rec.returnPct.toFixed(1)}%
-                </p>
-                <p className="text-[10px] text-muted-foreground">since signal</p>
-              </div>
-              <span className="badge badge-green">BUY</span>
-            </div>
-          ))}
+          <Recommendation ticker="TSM" company="Taiwan Semiconductor" theme="Semiconductors" date="15 Mar 2025" price={165.20} />
+          <Recommendation ticker="ASML" company="ASML Holding" theme="Semiconductors" date="15 Mar 2025" price={878.50} />
+          <Recommendation ticker="LLY" company="Eli Lilly" theme="Healthcare" date="20 Feb 2025" price={730.00} />
+          <Recommendation ticker="CRWD" company="CrowdStrike" theme="Cybersecurity" date="01 Mar 2025" price={322.80} />
+          <Recommendation ticker="AMD" company="Advanced Micro Devices" theme="Semiconductors" date="01 Apr 2025" price={155.40} />
+          <Recommendation ticker="AVGO" company="Broadcom" theme="Semiconductors" date="01 Apr 2025" price={168.20} />
+          <Recommendation ticker="PANW" company="Palo Alto Networks" theme="Cybersecurity" date="15 Apr 2025" price={180.40} />
         </div>
-      </div>
+      </section>
 
-      {/* Theme Performance */}
-      <div className="card">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Performance by Theme
+      {/* Section 2 — Recommendation Performance Summary */}
+      <section className="card">
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Recommendation Performance Summary
         </h2>
-        <div className="space-y-2">
-          {THEME_PERFORMANCE.map(({ theme, avgReturn, count }) => (
-            <div key={theme} className="flex items-center gap-3">
-              <span className="w-40 text-sm">{theme}</span>
-              <div className="flex-1">
-                <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                  <div className={`h-full rounded-full ${avgReturn >= 0 ? "bg-emerald-500" : "bg-red-500"}`}
-                    style={{ width: `${Math.min(Math.abs(avgReturn) * 5, 100)}%` }} />
-                </div>
-              </div>
-              <span className={`w-14 text-right text-sm font-bold ${avgReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                {avgReturn >= 0 ? "+" : ""}{avgReturn.toFixed(1)}%
-              </span>
-              <span className="w-6 text-right text-[10px] text-muted-foreground">{count}</span>
-            </div>
-          ))}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Total BUY Signals" value="7" />
+          <Stat label="Avg Return Since Signal" value="+6.3%" variant="green" />
+          <Stat label="Best Performing Signal" value="LLY +12.4%" variant="green" />
+          <Stat label="Best Performing Theme" value="Cybersecurity +6.5%" variant="green" />
         </div>
-      </div>
+        <p className="mt-4 text-[11px] text-muted-foreground">
+          Returns calculated from signal date to latest available price. View full breakdown on Recommendation Performance page.
+        </p>
+      </section>
 
-      {/* Screening Summary */}
-      <div className="card">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Screening Summary
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg bg-emerald-50 p-4 text-center dark:bg-emerald-950/30">
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{approved.length}</p>
-            <p className="text-xs text-muted-foreground">Approved</p>
-          </div>
-          <div className="rounded-lg bg-amber-50 p-4 text-center dark:bg-amber-950/30">
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{watchlist.length}</p>
-            <p className="text-xs text-muted-foreground">Watchlist</p>
-          </div>
-          <div className="rounded-lg bg-red-50 p-4 text-center dark:bg-red-950/30">
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{rejected.length}</p>
-            <p className="text-xs text-muted-foreground">Rejected</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Research Notes */}
-      <div className="card">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Recent Research Notes
+      {/* Section 3 — Theme Summary */}
+      <section className="card">
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Theme Summary
         </h2>
         <div className="space-y-3">
-          <ResearchNote date="2025-05-25" title="Regime Change: Strong Bull → Weak Bull" content="Breadth narrowing to 55%. VIX rising. Adjusting posture to quality + defensive. Increasing cash target to 20%." />
-          <ResearchNote date="2025-05-20" title="NVDA Rejected — Israel Exposure" content="NVIDIA fails hard exclusion due to Mellanox acquisition. 3,000+ employees in Israel R&D. Permanent rejection." />
-          <ResearchNote date="2025-04-15" title="PANW Added — BUY Signal" content="Palo Alto Networks platform consolidation thesis. Non-discretionary cybersecurity spend. Strong enterprise pipeline." />
-          <ResearchNote date="2025-04-01" title="AMD & AVGO — BUY Signals" content="MI300 AI accelerator gaining share (AMD). Custom AI chips for hyperscalers (AVGO). Both pass eligibility screening." />
+          <ThemeRow theme="Semiconductors" recommendations={4} avgReturn={5.97} status="STRONG" />
+          <ThemeRow theme="Cybersecurity" recommendations={2} avgReturn={6.46} status="STRONG" />
+          <ThemeRow theme="Healthcare" recommendations={2} avgReturn={3.09} status="NEUTRAL" />
+          <ThemeRow theme="Halal Finance" recommendations={1} avgReturn={3.44} status="NEUTRAL" />
+          <ThemeRow theme="Oil & Gas" recommendations={1} avgReturn={2.87} status="NEUTRAL" />
+          <ThemeRow theme="Industrial Automation" recommendations={1} avgReturn={4.35} status="NEUTRAL" />
         </div>
-      </div>
+      </section>
+
+      {/* Section 4 — Screening Summary */}
+      <section className="card">
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Screening Principles
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <PrincipleCard icon="🎰" label="No Gambling" />
+          <PrincipleCard icon="🍺" label="No Alcohol" />
+          <PrincipleCard icon="⚔️" label="No Weapons" />
+          <PrincipleCard icon="🏦" label="No Interest-Based Finance" />
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Only assets that pass all ethical screening criteria receive BUY or HOLD recommendations.
+          Rejected assets never enter the recommendation system.
+        </p>
+      </section>
+
+      {/* Section 5 — Latest Research Notes */}
+      <section className="card">
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Latest Research Notes
+        </h2>
+        <div className="space-y-3">
+          <NotePreview date="25 May 2025" title="Market Regime Shift: Strong Bull → Weak Bull" theme="Market Regime" />
+          <NotePreview date="20 May 2025" title="NVIDIA Rejected — Israel Exposure Confirmed" theme="Screening" />
+          <NotePreview date="15 Apr 2025" title="Cybersecurity: Platform Consolidation Thesis" theme="Cybersecurity" />
+          <NotePreview date="01 Apr 2025" title="Semiconductor AI Demand: Structural, Not Cyclical" theme="Semiconductors" />
+        </div>
+      </section>
 
       {/* Disclaimer */}
       <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground dark:border-border-dark">
@@ -159,14 +96,66 @@ export default function DashboardPage() {
   );
 }
 
-function ResearchNote({ date, title, content }: { date: string; title: string; content: string }) {
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function Recommendation({ ticker, company, theme, date, price }: { ticker: string; company: string; theme: string; date: string; price: number }) {
   return (
-    <div className="rounded-lg border border-border/50 p-3 dark:border-border-dark/50">
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-muted-foreground">{date}</span>
-        <span className="text-sm font-medium">{title}</span>
+    <div className="flex items-center gap-4 rounded-lg border border-border p-3 dark:border-border-dark">
+      <span className="badge badge-green">BUY</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm font-bold">{ticker}</span>
+          <span className="text-sm">{company}</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">{theme}</span>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{content}</p>
+      <div className="text-right">
+        <p className="text-sm font-mono font-medium">${price.toFixed(2)}</p>
+        <p className="text-[10px] text-muted-foreground">{date}</p>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, variant }: { label: string; value: string; variant?: "green" | "red" }) {
+  const color = variant === "green" ? "text-emerald-600 dark:text-emerald-400" : variant === "red" ? "text-red-600 dark:text-red-400" : "text-foreground";
+  return (
+    <div>
+      <p className="text-[11px] font-medium uppercase text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+function ThemeRow({ theme, recommendations, avgReturn, status }: { theme: string; recommendations: number; avgReturn: number; status: string }) {
+  const statusColors: Record<string, string> = { STRONG: "badge-green", NEUTRAL: "badge-blue", WEAK: "badge-amber" };
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-border/50 p-3 dark:border-border-dark/50">
+      <span className="w-40 text-sm font-medium">{theme}</span>
+      <span className="text-xs text-muted-foreground">{recommendations} signals</span>
+      <span className={`text-sm font-bold ${avgReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+        {avgReturn >= 0 ? "+" : ""}{avgReturn.toFixed(1)}%
+      </span>
+      <span className={`badge ml-auto ${statusColors[status] || "badge-gray"}`}>{status}</span>
+    </div>
+  );
+}
+
+function PrincipleCard({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border p-3 dark:border-border-dark">
+      <span className="text-xl">{icon}</span>
+      <span className="text-sm font-medium">{label}</span>
+    </div>
+  );
+}
+
+function NotePreview({ date, title, theme }: { date: string; title: string; theme: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3 dark:border-border-dark/50">
+      <span className="text-[10px] text-muted-foreground">{date}</span>
+      <span className="flex-1 text-sm">{title}</span>
+      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{theme}</span>
     </div>
   );
 }
