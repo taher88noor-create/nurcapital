@@ -15,21 +15,22 @@ interface Signal {
   signalPrice: number;
   theme: string;
   rationale: string;
+  regime: string;
 }
 
 const SIGNAL_RECORDS: Signal[] = [
-  { id: 1, ticker: "TSM", companyName: "Taiwan Semiconductor", rating: "BUY", signalDate: "2025-03-15", signalPrice: 165.20, theme: "Semiconductors", rationale: "Leading foundry. AI demand structural. Monopoly in advanced nodes." },
-  { id: 2, ticker: "ASML", companyName: "ASML Holding", rating: "BUY", signalDate: "2025-03-15", signalPrice: 878.50, theme: "Semiconductors", rationale: "Sole EUV manufacturer. Multi-year backlog." },
-  { id: 3, ticker: "LLY", companyName: "Eli Lilly", rating: "BUY", signalDate: "2025-02-20", signalPrice: 730.00, theme: "Healthcare", rationale: "GLP-1 leader. $100B+ obesity TAM." },
-  { id: 4, ticker: "CRWD", companyName: "CrowdStrike", rating: "BUY", signalDate: "2025-03-01", signalPrice: 322.80, theme: "Cybersecurity", rationale: "Endpoint security leader. 97% retention." },
-  { id: 5, ticker: "AMD", companyName: "Advanced Micro Devices", rating: "BUY", signalDate: "2025-04-01", signalPrice: 155.40, theme: "Semiconductors", rationale: "MI300 AI accelerator gaining share." },
-  { id: 6, ticker: "AVGO", companyName: "Broadcom", rating: "BUY", signalDate: "2025-04-01", signalPrice: 168.20, theme: "Semiconductors", rationale: "Custom AI chips for Google/Meta." },
-  { id: 7, ticker: "PANW", companyName: "Palo Alto Networks", rating: "BUY", signalDate: "2025-04-15", signalPrice: 180.40, theme: "Cybersecurity", rationale: "Platform consolidation leader." },
-  { id: 8, ticker: "HLAL", companyName: "Wahed FTSE USA Shariah ETF", rating: "HOLD", signalDate: "2025-01-10", signalPrice: 40.75, theme: "Halal Finance", rationale: "Core Sharia-compliant US equity anchor." },
-  { id: 9, ticker: "2222.SR", companyName: "Saudi Aramco", rating: "HOLD", signalDate: "2025-02-01", signalPrice: 8.02, theme: "Oil & Gas", rationale: "Lowest-cost producer. 4%+ dividend." },
-  { id: 10, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2025-03-15", signalPrice: 50.60, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality." },
-  { id: 11, ticker: "NOVO-B", companyName: "Novo Nordisk", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 137.00, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact." },
-  { id: 12, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2025-05-20", signalPrice: 105.20, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure." },
+  { id: 1, ticker: "TSM", companyName: "Taiwan Semiconductor", rating: "BUY", signalDate: "2025-03-15", signalPrice: 165.20, theme: "Semiconductors", rationale: "Leading foundry. AI demand structural. Monopoly in advanced nodes.", regime: "Strong Bull" },
+  { id: 2, ticker: "ASML", companyName: "ASML Holding", rating: "BUY", signalDate: "2025-03-15", signalPrice: 878.50, theme: "Semiconductors", rationale: "Sole EUV manufacturer. Multi-year backlog.", regime: "Strong Bull" },
+  { id: 3, ticker: "LLY", companyName: "Eli Lilly", rating: "BUY", signalDate: "2025-02-20", signalPrice: 730.00, theme: "Healthcare", rationale: "GLP-1 leader. $100B+ obesity TAM.", regime: "Sideways" },
+  { id: 4, ticker: "CRWD", companyName: "CrowdStrike", rating: "BUY", signalDate: "2025-03-01", signalPrice: 322.80, theme: "Cybersecurity", rationale: "Endpoint security leader. 97% retention.", regime: "Sideways" },
+  { id: 5, ticker: "AMD", companyName: "Advanced Micro Devices", rating: "BUY", signalDate: "2025-04-01", signalPrice: 155.40, theme: "Semiconductors", rationale: "MI300 AI accelerator gaining share.", regime: "Strong Bull" },
+  { id: 6, ticker: "AVGO", companyName: "Broadcom", rating: "BUY", signalDate: "2025-04-01", signalPrice: 168.20, theme: "Semiconductors", rationale: "Custom AI chips for Google/Meta.", regime: "Strong Bull" },
+  { id: 7, ticker: "PANW", companyName: "Palo Alto Networks", rating: "BUY", signalDate: "2025-04-15", signalPrice: 180.40, theme: "Cybersecurity", rationale: "Platform consolidation leader.", regime: "Strong Bull" },
+  { id: 8, ticker: "HLAL", companyName: "Wahed FTSE USA Shariah ETF", rating: "HOLD", signalDate: "2025-01-10", signalPrice: 40.75, theme: "Halal Finance", rationale: "Core Sharia-compliant US equity anchor.", regime: "Sideways" },
+  { id: 9, ticker: "2222.SR", companyName: "Saudi Aramco", rating: "HOLD", signalDate: "2025-02-01", signalPrice: 8.02, theme: "Oil & Gas", rationale: "Lowest-cost producer. 4%+ dividend.", regime: "Sideways" },
+  { id: 10, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2025-03-15", signalPrice: 50.60, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Strong Bull" },
+  { id: 11, ticker: "NOVO-B", companyName: "Novo Nordisk", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 137.00, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact.", regime: "Sideways" },
+  { id: 12, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2025-05-20", signalPrice: 105.20, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
 ];
 
 // ── Horizon maturity calculation ─────────────────────────────────────────────
