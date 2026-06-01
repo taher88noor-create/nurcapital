@@ -82,12 +82,13 @@ export default function RecommendationPerformancePage() {
       if (Object.keys(prices).length > 0) {
         setLivePrices(prices);
         setDataMode("live");
-        setLastRefreshed(new Date().toLocaleString());
+        const now = new Date();
+        setLastRefreshed(now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " UTC");
       } else {
         throw new Error("No prices returned");
       }
     } catch {
-      setRefreshError("Could not fetch live prices. Showing stored signal data. Backend may be sleeping (free tier wakes in ~30s).");
+      setRefreshError("Unable to refresh market prices. Showing previously stored recommendation performance. Backend may be sleeping (free tier wakes in ~30s).");
     }
     setRefreshing(false);
   };
@@ -154,18 +155,18 @@ export default function RecommendationPerformancePage() {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <span className={`badge ${dataMode === "live" ? "badge-green" : "badge-amber"}`}>
-              {dataMode === "live" ? "● Live Price Refreshed" : "● Stored Signal Data"}
+              {dataMode === "live" ? "● Live Market Data" : "● Stored Recommendation Data"}
             </span>
             {dataMode === "stored" && (
-              <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Staged prices. Click refresh for live market data.</p>
+              <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Click refresh for latest market prices.</p>
             )}
             {lastRefreshed && (
-              <p className="mt-1 text-[10px] text-muted-foreground">Last updated: {lastRefreshed}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">Last Updated: {lastRefreshed}</p>
             )}
           </div>
           <button onClick={refreshPerformance} disabled={refreshing}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
-            {refreshing ? "Fetching prices..." : "Refresh Performance"}
+            {refreshing ? `Refreshing ${SIGNAL_RECORDS.length} recommendations...` : "Refresh Performance"}
           </button>
         </div>
       </div>
