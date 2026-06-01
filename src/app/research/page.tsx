@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { getAssetIdentity } from "@/data/asset-identity";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -56,6 +57,7 @@ export default function RecommendationPerformancePage() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [filterRating, setFilterRating] = useState<string>("ALL");
   const [filterTheme, setFilterTheme] = useState<string>("ALL");
+  const [expandedSignal, setExpandedSignal] = useState<number | null>(null);
 
   // Staged prices (used before live refresh)
   const stagedPrices: Record<string, number> = {
@@ -278,8 +280,10 @@ export default function RecommendationPerformancePage() {
             {filtered.map((s) => {
               const price = getCurrentPrice(s.ticker, s.signalPrice);
               const ret = calcReturn(s.signalPrice, price);
+              const identity = getAssetIdentity(s.ticker);
+              const isExpanded = expandedSignal === s.id;
               return (
-                <tr key={s.id} className="border-b border-border/30 dark:border-border-dark/30">
+                <tr key={s.id} className="border-b border-border/30 cursor-pointer hover:bg-slate-50 dark:border-border-dark/30 dark:hover:bg-slate-800/50" onClick={() => setExpandedSignal(isExpanded ? null : s.id)}>
                   <td className="py-2.5 pr-3 text-xs">{s.signalDate}</td>
                   <td className="py-2.5 pr-3 font-mono font-bold">{s.ticker}</td>
                   <td className="py-2.5 pr-3 hidden text-muted-foreground lg:table-cell">{s.companyName}</td>
@@ -301,6 +305,53 @@ export default function RecommendationPerformancePage() {
           </tbody>
         </table>
       </div>
+
+      {/* Expanded Signal Detail */}
+      {expandedSignal && (() => {
+        const s = SIGNAL_RECORDS.find((sig) => sig.id === expandedSignal);
+        if (!s) return null;
+        const identity = getAssetIdentity(s.ticker);
+        const price = getCurrentPrice(s.ticker, s.signalPrice);
+        const ret = calcReturn(s.signalPrice, price);
+        return (
+          <div className="card">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">{s.ticker} — {s.companyName}</h3>
+              <button onClick={() => setExpandedSignal(null)} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div><p className="text-[10px] uppercase text-muted-foreground">Signal Date</p><p className="mt-1 text-sm font-medium">{s.signalDate}</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Signal Price</p><p className="mt-1 text-sm font-mono font-medium">${s.signalPrice.toFixed(2)}</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Current Price</p><p className="mt-1 text-sm font-mono font-medium">${price.toFixed(2)}</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Current Return</p><p className={`mt-1 text-sm font-bold ${ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{ret >= 0 ? "+" : ""}{ret.toFixed(1)}%</p></div>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div><p className="text-[10px] uppercase text-muted-foreground">Theme</p><p className="mt-1 text-sm">{s.theme}</p></div>
+              <div><p className="text-[10px] uppercase text-muted-foreground">Market Regime at Signal</p><p className="mt-1 text-sm">{s.regime}</p></div>
+            </div>
+            <div className="mt-4">
+              <p className="text-[10px] uppercase text-muted-foreground">Rationale</p>
+              <p className="mt-1 text-sm">{s.rationale}</p>
+            </div>
+
+            {/* How to Find This Asset */}
+            {identity && (
+              <div className="mt-6 rounded-lg border border-border bg-slate-50 p-4 dark:border-border-dark dark:bg-slate-800/50">
+                <h4 className="text-xs font-semibold uppercase text-muted-foreground">How to Find This Asset</h4>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div><p className="text-[10px] text-muted-foreground">Company</p><p className="text-sm font-medium">{identity.companyName}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Ticker</p><p className="text-sm font-mono font-bold">{identity.ticker}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Exchange</p><p className="text-sm">{identity.exchange}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">ISIN</p><p className="text-sm font-mono">{identity.isin}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">AJ Bell Search</p><p className="text-sm font-medium text-brand-700 dark:text-brand-400">{identity.brokerSearchName}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Asset Type</p><p className="text-sm">{identity.assetType}</p></div>
+                </div>
+                <p className="mt-3 text-[10px] text-muted-foreground">Search for "{identity.brokerSearchName}" or ISIN "{identity.isin}" on AJ Bell or your investment platform.</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Disclaimer */}
       <div className="rounded-lg border border-border bg-slate-50 p-4 text-center dark:border-border-dark dark:bg-slate-800/50">
