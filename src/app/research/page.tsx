@@ -111,18 +111,11 @@ export default function RecommendationPerformancePage() {
         log.push(`  ${ticker}: $${(price as number).toFixed(2)} (staged: $${staged?.toFixed(2) || "N/A"}, variance: ${variance}%)`);
       }
 
-      // Log failures
+      // Log failures from the API response
       const failed = new Set<string>();
       for (const err of errors) {
         log.push(`  ${err.ticker}: FAILED — ${err.error}`);
         failed.add(err.ticker);
-      }
-      // Mark tickers not in response as failed
-      for (const t of tickers) {
-        if (!prices[t] && !failed.has(t)) {
-          failed.add(t);
-          log.push(`  ${t}: No price returned — using staged fallback`);
-        }
       }
 
       setFailedTickers(failed);
@@ -139,6 +132,7 @@ export default function RecommendationPerformancePage() {
     } catch (e) {
       log.push(`REFRESH FAILED: ${e}`);
       setRefreshError("Unable to refresh market prices. Showing previously stored recommendation performance.");
+      setFailedTickers(new Set());
     }
     setRefreshLog(log);
     setRefreshing(false);
