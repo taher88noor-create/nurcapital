@@ -1,11 +1,8 @@
 /**
  * Nür Capital — Asset Identity Layer
  *
- * Ensures every recommended asset can be located on AJ Bell
- * and other UK investment platforms.
- *
- * No broker integration. No trading functionality.
- * Identification and searchability only.
+ * Every recommended asset must be identifiable on AJ Bell.
+ * Non-AJ Bell assets are marked and excluded from active BUY recommendations.
  */
 
 export interface AssetIdentity {
@@ -17,154 +14,97 @@ export interface AssetIdentity {
   brokerSearchName: string;
   currency: string;
   country: string;
+  ajBellActionable: boolean;
+  priceTicker: string; // Ticker used for Yahoo Finance pricing
 }
 
 export const ASSET_IDENTITIES: Record<string, AssetIdentity> = {
+  // ── AJ Bell Actionable (eligible for BUY recommendations) ──────────────────
   TSM: {
-    ticker: "TSM",
-    companyName: "Taiwan Semiconductor Manufacturing Company",
-    exchange: "NYSE",
-    isin: "US8740391003",
-    assetType: "Equity",
+    ticker: "TSM", companyName: "Taiwan Semiconductor Manufacturing Company",
+    exchange: "NYSE", isin: "US8740391003", assetType: "Equity",
     brokerSearchName: "Taiwan Semiconductor Manufacturing ADR",
-    currency: "USD",
-    country: "Taiwan",
+    currency: "USD", country: "Taiwan", ajBellActionable: true, priceTicker: "TSM",
   },
   ASML: {
-    ticker: "ASML",
-    companyName: "ASML Holding NV",
-    exchange: "EURONEXT / NASDAQ",
-    isin: "USN070592100",
-    assetType: "Equity",
+    ticker: "ASML", companyName: "ASML Holding NV",
+    exchange: "NASDAQ", isin: "USN070592100", assetType: "Equity",
     brokerSearchName: "ASML Holding",
-    currency: "EUR / USD",
-    country: "Netherlands",
+    currency: "USD", country: "Netherlands", ajBellActionable: true, priceTicker: "ASML",
   },
   LLY: {
-    ticker: "LLY",
-    companyName: "Eli Lilly and Company",
-    exchange: "NYSE",
-    isin: "US5324571083",
-    assetType: "Equity",
+    ticker: "LLY", companyName: "Eli Lilly and Company",
+    exchange: "NYSE", isin: "US5324571083", assetType: "Equity",
     brokerSearchName: "Eli Lilly",
-    currency: "USD",
-    country: "US",
+    currency: "USD", country: "US", ajBellActionable: true, priceTicker: "LLY",
   },
   CRWD: {
-    ticker: "CRWD",
-    companyName: "CrowdStrike Holdings Inc",
-    exchange: "NASDAQ",
-    isin: "US22788C1053",
-    assetType: "Equity",
+    ticker: "CRWD", companyName: "CrowdStrike Holdings Inc",
+    exchange: "NASDAQ", isin: "US22788C1053", assetType: "Equity",
     brokerSearchName: "CrowdStrike Holdings",
-    currency: "USD",
-    country: "US",
+    currency: "USD", country: "US", ajBellActionable: true, priceTicker: "CRWD",
   },
   AMD: {
-    ticker: "AMD",
-    companyName: "Advanced Micro Devices Inc",
-    exchange: "NASDAQ",
-    isin: "US0079031078",
-    assetType: "Equity",
+    ticker: "AMD", companyName: "Advanced Micro Devices Inc",
+    exchange: "NASDAQ", isin: "US0079031078", assetType: "Equity",
     brokerSearchName: "Advanced Micro Devices",
-    currency: "USD",
-    country: "US",
+    currency: "USD", country: "US", ajBellActionable: true, priceTicker: "AMD",
   },
   AVGO: {
-    ticker: "AVGO",
-    companyName: "Broadcom Inc",
-    exchange: "NASDAQ",
-    isin: "US11135F1012",
-    assetType: "Equity",
+    ticker: "AVGO", companyName: "Broadcom Inc",
+    exchange: "NASDAQ", isin: "US11135F1012", assetType: "Equity",
     brokerSearchName: "Broadcom",
-    currency: "USD",
-    country: "US",
+    currency: "USD", country: "US", ajBellActionable: true, priceTicker: "AVGO",
   },
   PANW: {
-    ticker: "PANW",
-    companyName: "Palo Alto Networks Inc",
-    exchange: "NASDAQ",
-    isin: "US6974351057",
-    assetType: "Equity",
+    ticker: "PANW", companyName: "Palo Alto Networks Inc",
+    exchange: "NASDAQ", isin: "US6974351057", assetType: "Equity",
     brokerSearchName: "Palo Alto Networks",
-    currency: "USD",
-    country: "US",
+    currency: "USD", country: "US", ajBellActionable: true, priceTicker: "PANW",
   },
-  HLAL: {
-    ticker: "HLAL",
-    companyName: "Wahed FTSE USA Shariah ETF",
-    exchange: "NASDAQ",
-    isin: "US92790R1041",
-    assetType: "ETF",
-    brokerSearchName: "Wahed FTSE USA Shariah ETF",
-    currency: "USD",
-    country: "US",
-  },
-  "2222.SR": {
-    ticker: "2222.SR",
-    companyName: "Saudi Arabian Oil Company (Aramco)",
-    exchange: "TADAWUL",
-    isin: "SA14TG012N13",
-    assetType: "Equity",
-    brokerSearchName: "Saudi Aramco",
-    currency: "SAR",
-    country: "Saudi Arabia",
+  NVO: {
+    ticker: "NVO", companyName: "Novo Nordisk A/S (ADR)",
+    exchange: "NYSE", isin: "US6701002056", assetType: "Equity",
+    brokerSearchName: "Novo Nordisk ADR",
+    currency: "USD", country: "Denmark", ajBellActionable: true, priceTicker: "NVO",
   },
   ABB: {
-    ticker: "ABB",
-    companyName: "ABB Ltd",
-    exchange: "NYSE / SIX",
-    isin: "CH0012221716",
-    assetType: "Equity",
+    ticker: "ABB", companyName: "ABB Ltd",
+    exchange: "NYSE", isin: "CH0012221716", assetType: "Equity",
     brokerSearchName: "ABB Ltd",
-    currency: "CHF / USD",
-    country: "Switzerland",
-  },
-  "NOVO-B": {
-    ticker: "NOVO-B",
-    companyName: "Novo Nordisk A/S",
-    exchange: "CPH / NYSE (NVO)",
-    isin: "DK0062498333",
-    assetType: "Equity",
-    brokerSearchName: "Novo Nordisk",
-    currency: "DKK / USD",
-    country: "Denmark",
+    currency: "USD", country: "Switzerland", ajBellActionable: true, priceTicker: "ABB",
   },
   ENPH: {
-    ticker: "ENPH",
-    companyName: "Enphase Energy Inc",
-    exchange: "NASDAQ",
-    isin: "US29355A1079",
-    assetType: "Equity",
+    ticker: "ENPH", companyName: "Enphase Energy Inc",
+    exchange: "NASDAQ", isin: "US29355A1079", assetType: "Equity",
     brokerSearchName: "Enphase Energy",
-    currency: "USD",
-    country: "US",
+    currency: "USD", country: "US", ajBellActionable: true, priceTicker: "ENPH",
   },
-  SPUS: {
-    ticker: "SPUS",
-    companyName: "SP Funds S&P 500 Sharia Industry Exclusions ETF",
-    exchange: "NYSE",
-    isin: "US78463X8719",
-    assetType: "ETF",
-    brokerSearchName: "SP Funds S&P 500 Sharia ETF",
-    currency: "USD",
-    country: "US",
+  // ── Research-only (NOT AJ Bell actionable) ─────────────────────────────────
+  HLAL: {
+    ticker: "HLAL", companyName: "Wahed FTSE USA Shariah ETF",
+    exchange: "NASDAQ", isin: "US92790R1041", assetType: "ETF",
+    brokerSearchName: "Wahed FTSE USA Shariah ETF",
+    currency: "USD", country: "US", ajBellActionable: false, priceTicker: "HLAL",
+  },
+  "2222.SR": {
+    ticker: "2222.SR", companyName: "Saudi Arabian Oil Company (Aramco)",
+    exchange: "TADAWUL", isin: "SA14TG012N13", assetType: "Equity",
+    brokerSearchName: "Saudi Aramco",
+    currency: "SAR", country: "Saudi Arabia", ajBellActionable: false, priceTicker: "2222.SR",
   },
   "1211.HK": {
-    ticker: "1211.HK",
-    companyName: "BYD Company Limited",
-    exchange: "HKEX",
-    isin: "CNE100000296",
-    assetType: "Equity",
+    ticker: "1211.HK", companyName: "BYD Company Limited",
+    exchange: "HKEX", isin: "CNE100000296", assetType: "Equity",
     brokerSearchName: "BYD Company",
-    currency: "HKD",
-    country: "China",
+    currency: "HKD", country: "China", ajBellActionable: false, priceTicker: "1211.HK",
   },
 };
 
-/**
- * Get asset identity by ticker. Returns undefined if not found.
- */
 export function getAssetIdentity(ticker: string): AssetIdentity | undefined {
   return ASSET_IDENTITIES[ticker];
+}
+
+export function getAjBellActionableAssets(): AssetIdentity[] {
+  return Object.values(ASSET_IDENTITIES).filter((a) => a.ajBellActionable);
 }

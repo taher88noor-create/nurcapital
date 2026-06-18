@@ -30,7 +30,7 @@ const SIGNAL_RECORDS: Signal[] = [
   { id: 8, ticker: "HLAL", companyName: "Wahed FTSE USA Shariah ETF", rating: "HOLD", signalDate: "2025-01-10", signalPrice: 40.75, theme: "Halal Finance", rationale: "Core Sharia-compliant US equity anchor.", regime: "Sideways" },
   { id: 9, ticker: "2222.SR", companyName: "Saudi Aramco", rating: "HOLD", signalDate: "2025-02-01", signalPrice: 8.02, theme: "Oil & Gas", rationale: "Lowest-cost producer. 4%+ dividend.", regime: "Sideways" },
   { id: 10, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2025-03-15", signalPrice: 50.60, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Strong Bull" },
-  { id: 11, ticker: "NOVO-B", companyName: "Novo Nordisk", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 137.00, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact.", regime: "Sideways" },
+  { id: 11, ticker: "NVO", companyName: "Novo Nordisk (ADR)", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 110.50, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact. Using NYSE ADR for AJ Bell compatibility.", regime: "Sideways" },
   { id: 12, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2025-05-20", signalPrice: 105.20, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
 ];
 
@@ -51,6 +51,7 @@ function isHorizonMatured(signalDate: string, horizonDays: number): boolean {
 export default function RecommendationPerformancePage() {
   // Live prices (null until refreshed)
   const [livePrices, setLivePrices] = useState<Record<string, number>>({});
+  const [failedTickers, setFailedTickers] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const [dataMode, setDataMode] = useState<"stored" | "live">("stored");
@@ -58,38 +59,88 @@ export default function RecommendationPerformancePage() {
   const [filterRating, setFilterRating] = useState<string>("ALL");
   const [filterTheme, setFilterTheme] = useState<string>("ALL");
   const [expandedSignal, setExpandedSignal] = useState<number | null>(null);
+  const [refreshLog, setRefreshLog] = useState<string[]>([]);
 
-  // Staged prices (used before live refresh)
+  // Staged prices — demo values from signal period (may be outdated)
   const stagedPrices: Record<string, number> = {
     TSM: 178.52, ASML: 924.30, LLY: 820.40, CRWD: 355.20,
     AMD: 162.30, AVGO: 178.50, PANW: 185.60, HLAL: 42.15,
-    "2222.SR": 8.25, ABB: 52.80, "NOVO-B": 128.50, ENPH: 98.45,
+    "2222.SR": 8.25, ABB: 52.80, NVO: 110.50, ENPH: 98.45,
+  };
+
+  // Get price source for display
+  const getPriceSource = (ticker: string): "live" | "staged" | "failed" => {
+    if (livePrices[ticker]) return "live";
+    if (failedTickers.has(ticker)) return "failed";
+    return "staged";
+  };
+
+  // Detect large variance between staged and live
+  const hasLargeVariance = (ticker: string): boolean => {
+    if (!livePrices[ticker] || !stagedPrices[ticker]) return false;
+    const variance = Math.abs((livePrices[ticker] - stagedPrices[ticker]) / stagedPrices[ticker]) * 100;
+    return variance > 10;
   };
 
   const refreshPerformance = async () => {
     setRefreshing(true);
     setRefreshError(null);
+    setFailedTickers(new Set());
+    const log: string[] = [];
     try {
       const tickers = SIGNAL_RECORDS.map((s) => s.ticker);
+      log.push(`Requesting prices for ${tickers.length} tickers: ${tickers.join(", ")}`);
+
       const res = await fetch(`${API_URL}/api/mock-portfolio/prices/fetch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tickers }),
       });
-      if (!res.ok) throw new Error("Backend unavailable");
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const json = await res.json();
       const prices = json.prices || {};
+      const errors = json.errors || [];
+
+      log.push(`Provider: Yahoo Finance`);
+      log.push(`Returned: ${Object.keys(prices).length} prices, ${errors.length} failures`);
+
+      // Log each returned price
+      for (const [ticker, price] of Object.entries(prices)) {
+        const staged = stagedPrices[ticker as string];
+        const variance = staged ? Math.abs(((price as number) - staged) / staged * 100).toFixed(1) : "N/A";
+        log.push(`  ${ticker}: $${(price as number).toFixed(2)} (staged: $${staged?.toFixed(2) || "N/A"}, variance: ${variance}%)`);
+      }
+
+      // Log failures
+      const failed = new Set<string>();
+      for (const err of errors) {
+        log.push(`  ${err.ticker}: FAILED — ${err.error}`);
+        failed.add(err.ticker);
+      }
+      // Mark tickers not in response as failed
+      for (const t of tickers) {
+        if (!prices[t] && !failed.has(t)) {
+          failed.add(t);
+          log.push(`  ${t}: No price returned — using staged fallback`);
+        }
+      }
+
+      setFailedTickers(failed);
+
       if (Object.keys(prices).length > 0) {
         setLivePrices(prices);
         setDataMode("live");
         const now = new Date();
         setLastRefreshed(now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " UTC");
+        log.push(`Refresh complete at ${new Date().toISOString()}`);
       } else {
         throw new Error("No prices returned");
       }
-    } catch {
-      setRefreshError("Unable to refresh market prices. Showing previously stored recommendation performance. Backend may be sleeping (free tier wakes in ~30s).");
+    } catch (e) {
+      log.push(`REFRESH FAILED: ${e}`);
+      setRefreshError("Unable to refresh market prices. Showing previously stored recommendation performance.");
     }
+    setRefreshLog(log);
     setRefreshing(false);
   };
 
@@ -117,7 +168,10 @@ export default function RecommendationPerformancePage() {
   // Derived data
   const themes = [...new Set(SIGNAL_RECORDS.map((s) => s.theme))];
   const filtered = SIGNAL_RECORDS.filter((s) => {
-    if (filterRating !== "ALL" && s.rating !== filterRating) return false;
+    if (filterRating === "AJBELL") {
+      const identity = getAssetIdentity(s.ticker);
+      if (!identity || !identity.ajBellActionable) return false;
+    } else if (filterRating !== "ALL" && s.rating !== filterRating) return false;
     if (filterTheme !== "ALL" && s.theme !== filterTheme) return false;
     return true;
   });
@@ -253,6 +307,11 @@ export default function RecommendationPerformancePage() {
           <option value="ALL">All Themes</option>
           {themes.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
+        <label className="flex items-center gap-2 self-center text-xs">
+          <input type="checkbox" checked={filterRating === "AJBELL"} onChange={(e) => setFilterRating(e.target.checked ? "AJBELL" : "ALL")}
+            className="rounded" />
+          AJ Bell Actionable only
+        </label>
         <span className="self-center text-xs text-muted-foreground">{filtered.length} signals</span>
       </div>
 
@@ -270,6 +329,7 @@ export default function RecommendationPerformancePage() {
               <th className="pb-2 pr-3 text-right">Signal Price</th>
               <th className="pb-2 pr-3 text-right">Current Price</th>
               <th className="pb-2 pr-3 text-right">Current Return</th>
+              <th className="pb-2 pr-3 text-center">Source</th>
               <th className="pb-2 pr-3 text-right">2W</th>
               <th className="pb-2 pr-3 text-right">1M</th>
               <th className="pb-2 pr-3 text-right">3M</th>
@@ -283,18 +343,26 @@ export default function RecommendationPerformancePage() {
               const ret = calcReturn(s.signalPrice, price);
               const identity = getAssetIdentity(s.ticker);
               const isExpanded = expandedSignal === s.id;
+              const source = getPriceSource(s.ticker);
+              const sourceLabel = source === "live" ? "Live" : source === "failed" ? "Failed" : "Staged";
+              const sourceColor = source === "live" ? "text-emerald-600 dark:text-emerald-400" : source === "failed" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400";
+              const ajBell = identity?.ajBellActionable;
               return (
-                <tr key={s.id} className="border-b border-border/30 cursor-pointer hover:bg-slate-50 dark:border-border-dark/30 dark:hover:bg-slate-800/50" onClick={() => setExpandedSignal(isExpanded ? null : s.id)}>
+                <tr key={s.id} className={`border-b border-border/30 cursor-pointer hover:bg-slate-50 dark:border-border-dark/30 dark:hover:bg-slate-800/50 ${!ajBell ? "opacity-60" : ""}`} onClick={() => setExpandedSignal(isExpanded ? null : s.id)}>
                   <td className="py-2.5 pr-3 text-xs">{s.signalDate}</td>
-                  <td className="py-2.5 pr-3 font-mono font-bold">{s.ticker}</td>
+                  <td className="py-2.5 pr-3 font-mono font-bold">
+                    {s.ticker}
+                    {!ajBell && <span className="ml-1 text-[9px] text-amber-600">⚠</span>}
+                  </td>
                   <td className="py-2.5 pr-3 hidden text-muted-foreground lg:table-cell">{s.companyName}</td>
                   <td className="py-2.5 pr-3 text-xs">{s.theme}</td>
                   <td className="py-2.5 pr-3"><span className={`badge ${ratingColors[s.rating]}`}>{s.rating}</span></td>
                   <td className="py-2.5 pr-3 text-right font-mono">${s.signalPrice.toFixed(2)}</td>
                   <td className="py-2.5 pr-3 text-right font-mono">${price.toFixed(2)}</td>
-                  <td className={`py-2.5 pr-3 text-right font-mono font-bold ${ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                    {ret >= 0 ? "+" : ""}{ret.toFixed(1)}%
+                  <td className={`py-2.5 pr-3 text-right font-mono font-bold ${source === "staged" ? "text-muted-foreground" : ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {source === "staged" && dataMode === "stored" ? "—" : `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`}
                   </td>
+                  <td className={`py-2.5 pr-3 text-center text-[10px] font-medium ${sourceColor}`}>{sourceLabel}</td>
                   <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 14)}</td>
                   <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 30)}</td>
                   <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 90)}</td>
