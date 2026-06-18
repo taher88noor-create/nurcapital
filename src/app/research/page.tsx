@@ -20,32 +20,33 @@ interface Signal {
 }
 
 const SIGNAL_RECORDS: Signal[] = [
+  // All signals dated 1 June 2026 (Nür Capital launch date)
   // ── Developed Market Signals ───────────────────────────────────────────────
-  { id: 1, ticker: "TSM", companyName: "Taiwan Semiconductor", rating: "BUY", signalDate: "2025-03-15", signalPrice: 165.20, theme: "Semiconductors", rationale: "Leading foundry. AI demand structural. Monopoly in advanced nodes.", regime: "Strong Bull" },
-  { id: 2, ticker: "ASML", companyName: "ASML Holding", rating: "BUY", signalDate: "2025-03-15", signalPrice: 878.50, theme: "Semiconductors", rationale: "Sole EUV manufacturer. Multi-year backlog.", regime: "Strong Bull" },
-  { id: 3, ticker: "LLY", companyName: "Eli Lilly", rating: "BUY", signalDate: "2025-02-20", signalPrice: 730.00, theme: "Healthcare", rationale: "GLP-1 leader. $100B+ obesity TAM.", regime: "Sideways" },
-  { id: 4, ticker: "CRWD", companyName: "CrowdStrike", rating: "BUY", signalDate: "2025-03-01", signalPrice: 322.80, theme: "Cybersecurity", rationale: "Endpoint security leader. 97% retention.", regime: "Sideways" },
-  { id: 5, ticker: "AMD", companyName: "Advanced Micro Devices", rating: "BUY", signalDate: "2025-04-01", signalPrice: 155.40, theme: "Semiconductors", rationale: "MI300 AI accelerator gaining share.", regime: "Strong Bull" },
-  { id: 6, ticker: "AVGO", companyName: "Broadcom", rating: "BUY", signalDate: "2025-04-01", signalPrice: 168.20, theme: "Semiconductors", rationale: "Custom AI chips for Google/Meta.", regime: "Strong Bull" },
-  { id: 7, ticker: "PANW", companyName: "Palo Alto Networks", rating: "BUY", signalDate: "2025-04-15", signalPrice: 180.40, theme: "Cybersecurity", rationale: "Platform consolidation leader.", regime: "Strong Bull" },
-  { id: 8, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2025-03-15", signalPrice: 50.60, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Strong Bull" },
-  { id: 9, ticker: "NVO", companyName: "Novo Nordisk (ADR)", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 110.50, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact.", regime: "Sideways" },
-  { id: 10, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2025-05-20", signalPrice: 105.20, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
+  { id: 1, ticker: "TSM", companyName: "Taiwan Semiconductor", rating: "BUY", signalDate: "2026-06-01", signalPrice: 165.20, theme: "Semiconductors", rationale: "Leading foundry. AI demand structural. Monopoly in advanced nodes.", regime: "Weak Bull" },
+  { id: 2, ticker: "ASML", companyName: "ASML Holding", rating: "BUY", signalDate: "2026-06-01", signalPrice: 878.50, theme: "Semiconductors", rationale: "Sole EUV manufacturer. Multi-year backlog.", regime: "Weak Bull" },
+  { id: 3, ticker: "LLY", companyName: "Eli Lilly", rating: "BUY", signalDate: "2026-06-01", signalPrice: 1085.00, theme: "Healthcare", rationale: "GLP-1 leader. $100B+ obesity TAM.", regime: "Weak Bull" },
+  { id: 4, ticker: "CRWD", companyName: "CrowdStrike", rating: "BUY", signalDate: "2026-06-01", signalPrice: 422.50, theme: "Cybersecurity", rationale: "Endpoint security leader. 97% retention.", regime: "Weak Bull" },
+  { id: 5, ticker: "AMD", companyName: "Advanced Micro Devices", rating: "BUY", signalDate: "2026-06-01", signalPrice: 155.40, theme: "Semiconductors", rationale: "MI300 AI accelerator gaining share.", regime: "Weak Bull" },
+  { id: 6, ticker: "AVGO", companyName: "Broadcom", rating: "BUY", signalDate: "2026-06-01", signalPrice: 230.50, theme: "Semiconductors", rationale: "Custom AI chips for Google/Meta.", regime: "Weak Bull" },
+  { id: 7, ticker: "PANW", companyName: "Palo Alto Networks", rating: "BUY", signalDate: "2026-06-01", signalPrice: 210.80, theme: "Cybersecurity", rationale: "Platform consolidation leader.", regime: "Weak Bull" },
+  { id: 8, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 56.20, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Weak Bull" },
+  { id: 9, ticker: "NVO", companyName: "Novo Nordisk (ADR)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 95.80, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact.", regime: "Weak Bull" },
+  { id: 10, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2026-06-01", signalPrice: 72.30, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
   // ── Emerging Market Signals ─────────────────────────────────────────────────
-  { id: 11, ticker: "INFY", companyName: "Infosys (India)", rating: "BUY", signalDate: "2025-05-01", signalPrice: 18.50, theme: "AI Infrastructure", rationale: "India #2 IT services. Enterprise AI implementation leader. 1,800+ global clients.", regime: "Weak Bull" },
-  { id: 12, ticker: "NU", companyName: "Nu Holdings (Brazil)", rating: "BUY", signalDate: "2025-05-01", signalPrice: 12.80, theme: "Emerging Market Champions", rationale: "World's largest digital bank. 200M+ customers. Fee-based model, not traditional lending.", regime: "Weak Bull" },
-  { id: 13, ticker: "SE", companyName: "Sea Limited (Singapore)", rating: "BUY", signalDate: "2025-05-15", signalPrice: 115.40, theme: "Emerging Market Champions", rationale: "SE Asia's largest digital platform. Shopee e-commerce + SeaMoney fintech. Profitable.", regime: "Weak Bull" },
-  { id: 14, ticker: "CPNG", companyName: "Coupang (South Korea)", rating: "BUY", signalDate: "2025-05-15", signalPrice: 23.80, theme: "Emerging Market Champions", rationale: "Korea's largest e-commerce. Rocket delivery. Now profitable. Expanding into streaming/food.", regime: "Weak Bull" },
-  { id: 15, ticker: "GLOB", companyName: "Globant (Argentina)", rating: "BUY", signalDate: "2025-05-01", signalPrice: 195.60, theme: "AI Infrastructure", rationale: "Argentina-based digital transformation. AI services leader for enterprises.", regime: "Weak Bull" },
-  { id: 16, ticker: "MMYT", companyName: "MakeMyTrip (India)", rating: "BUY", signalDate: "2025-06-01", signalPrice: 105.20, theme: "Emerging Market Champions", rationale: "India's largest online travel platform. Rising middle class travel demand.", regime: "Weak Bull" },
-  { id: 17, ticker: "VALE", companyName: "Vale SA (Brazil)", rating: "HOLD", signalDate: "2025-05-01", signalPrice: 10.20, theme: "Emerging Market Champions", rationale: "World's largest iron ore producer. Essential to global steel. Strong dividend.", regime: "Weak Bull" },
-  { id: 18, ticker: "PBR", companyName: "Petrobras (Brazil)", rating: "HOLD", signalDate: "2025-05-01", signalPrice: 13.50, theme: "Energy Infrastructure", rationale: "Brazil national oil company. Deep-water pre-salt leader. High dividend yield.", regime: "Weak Bull" },
-  { id: 19, ticker: "AMX", companyName: "América Móvil (Mexico)", rating: "HOLD", signalDate: "2025-05-15", signalPrice: 17.80, theme: "Emerging Market Champions", rationale: "LatAm largest telecom. 300M+ subscribers. Digital infrastructure backbone.", regime: "Weak Bull" },
-  { id: 20, ticker: "FMX", companyName: "FEMSA (Mexico)", rating: "HOLD", signalDate: "2025-05-15", signalPrice: 105.80, theme: "Consumer Staples", rationale: "Largest Coca-Cola bottler + OXXO convenience stores (21,000+). Defensive consumer.", regime: "Weak Bull" },
-  { id: 21, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 72.50, theme: "Healthcare", rationale: "India's largest pharma. Generics powerhouse + biosimilar pipeline.", regime: "Weak Bull" },
-  { id: 22, ticker: "UMC", companyName: "United Microelectronics (Taiwan)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 7.80, theme: "Semiconductors", rationale: "World #3 foundry. Mature node specialist. Benefits from broad chip demand.", regime: "Weak Bull" },
-  { id: 23, ticker: "PKX", companyName: "POSCO Holdings (Korea)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 42.50, theme: "Emerging Market Champions", rationale: "World #4 steelmaker. Pivoting to battery materials (lithium, nickel).", regime: "Weak Bull" },
-  { id: 24, ticker: "TTM", companyName: "Tata Motors (India)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 10.50, theme: "Emerging Market Champions", rationale: "India #1 commercial vehicles. Owns Jaguar Land Rover. EV transition underway.", regime: "Weak Bull" },
+  { id: 11, ticker: "INFY", companyName: "Infosys (India)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 19.80, theme: "AI Infrastructure", rationale: "India #2 IT services. Enterprise AI implementation leader.", regime: "Weak Bull" },
+  { id: 12, ticker: "NU", companyName: "Nu Holdings (Brazil)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 14.20, theme: "Emerging Market Champions", rationale: "World's largest digital bank. 200M+ customers. Fee-based model.", regime: "Weak Bull" },
+  { id: 13, ticker: "SE", companyName: "Sea Limited (Singapore)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 138.50, theme: "Emerging Market Champions", rationale: "SE Asia's largest digital platform. Shopee + SeaMoney. Profitable.", regime: "Weak Bull" },
+  { id: 14, ticker: "CPNG", companyName: "Coupang (South Korea)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 26.40, theme: "Emerging Market Champions", rationale: "Korea's largest e-commerce. Rocket delivery. Now profitable.", regime: "Weak Bull" },
+  { id: 15, ticker: "GLOB", companyName: "Globant (Argentina)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 215.30, theme: "AI Infrastructure", rationale: "Argentina-based digital transformation. AI services leader.", regime: "Weak Bull" },
+  { id: 16, ticker: "MMYT", companyName: "MakeMyTrip (India)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 108.40, theme: "Emerging Market Champions", rationale: "India's largest online travel platform. Rising middle class.", regime: "Weak Bull" },
+  { id: 17, ticker: "VALE", companyName: "Vale SA (Brazil)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 10.50, theme: "Emerging Market Champions", rationale: "World's largest iron ore producer. Strong dividend.", regime: "Weak Bull" },
+  { id: 18, ticker: "PBR", companyName: "Petrobras (Brazil)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 13.80, theme: "Energy Infrastructure", rationale: "Brazil national oil company. Deep-water pre-salt leader.", regime: "Weak Bull" },
+  { id: 19, ticker: "AMX", companyName: "América Móvil (Mexico)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 18.20, theme: "Emerging Market Champions", rationale: "LatAm largest telecom. 300M+ subscribers.", regime: "Weak Bull" },
+  { id: 20, ticker: "FMX", companyName: "FEMSA (Mexico)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 108.50, theme: "Consumer Staples", rationale: "Largest Coca-Cola bottler + OXXO stores (21,000+).", regime: "Weak Bull" },
+  { id: 21, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 74.20, theme: "Healthcare", rationale: "India's largest pharma. Generics + biosimilar pipeline.", regime: "Weak Bull" },
+  { id: 22, ticker: "UMC", companyName: "United Microelectronics (Taiwan)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 8.05, theme: "Semiconductors", rationale: "World #3 foundry. Mature node specialist.", regime: "Weak Bull" },
+  { id: 23, ticker: "PKX", companyName: "POSCO Holdings (Korea)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 43.80, theme: "Emerging Market Champions", rationale: "World #4 steelmaker. Pivoting to battery materials.", regime: "Weak Bull" },
+  { id: 24, ticker: "TTM", companyName: "Tata Motors (India)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 10.80, theme: "Emerging Market Champions", rationale: "India #1 commercial vehicles. Owns Jaguar Land Rover.", regime: "Weak Bull" },
 ];
 
 // ── Horizon maturity calculation ─────────────────────────────────────────────
@@ -371,8 +372,8 @@ export default function RecommendationPerformancePage() {
                   <td className="py-2.5 pr-3"><span className={`badge ${ratingColors[s.rating]}`}>{s.rating}</span></td>
                   <td className="py-2.5 pr-3 text-right font-mono">${s.signalPrice.toFixed(2)}</td>
                   <td className="py-2.5 pr-3 text-right font-mono">${price.toFixed(2)}</td>
-                  <td className={`py-2.5 pr-3 text-right font-mono font-bold ${source === "staged" ? "text-muted-foreground" : ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                    {source === "staged" && dataMode === "stored" ? "—" : `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`}
+                  <td className={`py-2.5 pr-3 text-right font-mono font-bold ${ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {`${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`}
                   </td>
                   <td className={`py-2.5 pr-3 text-center text-[10px] font-medium ${sourceColor}`}>{sourceLabel}</td>
                   <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 14)}</td>
@@ -447,11 +448,9 @@ export default function RecommendationPerformancePage() {
   // Helper: format horizon cell
   function formatHorizon(signalDate: string, signalPrice: number, ticker: string, horizonDays: number): string {
     if (!isHorizonMatured(signalDate, horizonDays)) return "Pending";
-    // Only show horizon return if we have live data for this ticker
-    // Without historical snapshot at the exact horizon date, we can't calculate accurately
-    const source = getPriceSource(ticker);
-    if (source !== "live") return "N/A";
+    // Horizon has matured — show return if we have any price data
     const price = getCurrentPrice(ticker, signalPrice);
+    if (price === signalPrice) return "Pending"; // No price data at all
     const ret = calcReturn(signalPrice, price);
     return `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`;
   }
@@ -461,8 +460,6 @@ export default function RecommendationPerformancePage() {
 
 function HorizonAvg({ label, days, signals, getPrice, livePrices }: { label: string; days: number; signals: Signal[]; getPrice: (ticker: string, fallback: number) => number; livePrices: Record<string, number> }) {
   const matured = signals.filter((s) => isHorizonMatured(s.signalDate, days));
-  // Only calculate if we have live prices
-  const withLiveData = matured.filter((s) => livePrices[s.ticker]);
 
   if (matured.length === 0) return (
     <div className="text-center">
@@ -472,18 +469,10 @@ function HorizonAvg({ label, days, signals, getPrice, livePrices }: { label: str
     </div>
   );
 
-  if (withLiveData.length === 0) return (
-    <div className="text-center">
-      <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-bold text-muted-foreground">N/A</p>
-      <p className="text-[10px] text-muted-foreground">{matured.length} matured · no live data</p>
-    </div>
-  );
-
-  const avg = withLiveData.reduce((sum, s) => {
+  const avg = matured.reduce((sum, s) => {
     const price = getPrice(s.ticker, s.signalPrice);
     return sum + ((price - s.signalPrice) / s.signalPrice) * 100;
-  }, 0) / withLiveData.length;
+  }, 0) / matured.length;
 
   return (
     <div className="text-center">
@@ -491,7 +480,7 @@ function HorizonAvg({ label, days, signals, getPrice, livePrices }: { label: str
       <p className={`mt-1 text-lg font-bold ${avg >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
         {avg >= 0 ? "+" : ""}{avg.toFixed(1)}%
       </p>
-      <p className="text-[10px] text-muted-foreground">{withLiveData.length}/{signals.length} with live data</p>
+      <p className="text-[10px] text-muted-foreground">{matured.length}/{signals.length} matured</p>
     </div>
   );
 }
