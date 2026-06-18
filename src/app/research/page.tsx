@@ -20,6 +20,7 @@ interface Signal {
 }
 
 const SIGNAL_RECORDS: Signal[] = [
+  // ── Developed Market Signals ───────────────────────────────────────────────
   { id: 1, ticker: "TSM", companyName: "Taiwan Semiconductor", rating: "BUY", signalDate: "2025-03-15", signalPrice: 165.20, theme: "Semiconductors", rationale: "Leading foundry. AI demand structural. Monopoly in advanced nodes.", regime: "Strong Bull" },
   { id: 2, ticker: "ASML", companyName: "ASML Holding", rating: "BUY", signalDate: "2025-03-15", signalPrice: 878.50, theme: "Semiconductors", rationale: "Sole EUV manufacturer. Multi-year backlog.", regime: "Strong Bull" },
   { id: 3, ticker: "LLY", companyName: "Eli Lilly", rating: "BUY", signalDate: "2025-02-20", signalPrice: 730.00, theme: "Healthcare", rationale: "GLP-1 leader. $100B+ obesity TAM.", regime: "Sideways" },
@@ -27,11 +28,24 @@ const SIGNAL_RECORDS: Signal[] = [
   { id: 5, ticker: "AMD", companyName: "Advanced Micro Devices", rating: "BUY", signalDate: "2025-04-01", signalPrice: 155.40, theme: "Semiconductors", rationale: "MI300 AI accelerator gaining share.", regime: "Strong Bull" },
   { id: 6, ticker: "AVGO", companyName: "Broadcom", rating: "BUY", signalDate: "2025-04-01", signalPrice: 168.20, theme: "Semiconductors", rationale: "Custom AI chips for Google/Meta.", regime: "Strong Bull" },
   { id: 7, ticker: "PANW", companyName: "Palo Alto Networks", rating: "BUY", signalDate: "2025-04-15", signalPrice: 180.40, theme: "Cybersecurity", rationale: "Platform consolidation leader.", regime: "Strong Bull" },
-  { id: 8, ticker: "HLAL", companyName: "Wahed FTSE USA Shariah ETF", rating: "HOLD", signalDate: "2025-01-10", signalPrice: 40.75, theme: "Halal Finance", rationale: "Core Sharia-compliant US equity anchor.", regime: "Sideways" },
-  { id: 9, ticker: "2222.SR", companyName: "Saudi Aramco", rating: "HOLD", signalDate: "2025-02-01", signalPrice: 8.02, theme: "Oil & Gas", rationale: "Lowest-cost producer. 4%+ dividend.", regime: "Sideways" },
-  { id: 10, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2025-03-15", signalPrice: 50.60, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Strong Bull" },
-  { id: 11, ticker: "NVO", companyName: "Novo Nordisk (ADR)", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 110.50, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact. Using NYSE ADR for AJ Bell compatibility.", regime: "Sideways" },
-  { id: 12, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2025-05-20", signalPrice: 105.20, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
+  { id: 8, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2025-03-15", signalPrice: 50.60, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Strong Bull" },
+  { id: 9, ticker: "NVO", companyName: "Novo Nordisk (ADR)", rating: "HOLD", signalDate: "2025-02-20", signalPrice: 110.50, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact.", regime: "Sideways" },
+  { id: 10, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2025-05-20", signalPrice: 105.20, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
+  // ── Emerging Market Signals ─────────────────────────────────────────────────
+  { id: 11, ticker: "INFY", companyName: "Infosys (India)", rating: "BUY", signalDate: "2025-05-01", signalPrice: 18.50, theme: "AI Infrastructure", rationale: "India #2 IT services. Enterprise AI implementation leader. 1,800+ global clients.", regime: "Weak Bull" },
+  { id: 12, ticker: "NU", companyName: "Nu Holdings (Brazil)", rating: "BUY", signalDate: "2025-05-01", signalPrice: 12.80, theme: "Emerging Market Champions", rationale: "World's largest digital bank. 200M+ customers. Fee-based model, not traditional lending.", regime: "Weak Bull" },
+  { id: 13, ticker: "SE", companyName: "Sea Limited (Singapore)", rating: "BUY", signalDate: "2025-05-15", signalPrice: 115.40, theme: "Emerging Market Champions", rationale: "SE Asia's largest digital platform. Shopee e-commerce + SeaMoney fintech. Profitable.", regime: "Weak Bull" },
+  { id: 14, ticker: "CPNG", companyName: "Coupang (South Korea)", rating: "BUY", signalDate: "2025-05-15", signalPrice: 23.80, theme: "Emerging Market Champions", rationale: "Korea's largest e-commerce. Rocket delivery. Now profitable. Expanding into streaming/food.", regime: "Weak Bull" },
+  { id: 15, ticker: "GLOB", companyName: "Globant (Argentina)", rating: "BUY", signalDate: "2025-05-01", signalPrice: 195.60, theme: "AI Infrastructure", rationale: "Argentina-based digital transformation. AI services leader for enterprises.", regime: "Weak Bull" },
+  { id: 16, ticker: "MMYT", companyName: "MakeMyTrip (India)", rating: "BUY", signalDate: "2025-06-01", signalPrice: 105.20, theme: "Emerging Market Champions", rationale: "India's largest online travel platform. Rising middle class travel demand.", regime: "Weak Bull" },
+  { id: 17, ticker: "VALE", companyName: "Vale SA (Brazil)", rating: "HOLD", signalDate: "2025-05-01", signalPrice: 10.20, theme: "Emerging Market Champions", rationale: "World's largest iron ore producer. Essential to global steel. Strong dividend.", regime: "Weak Bull" },
+  { id: 18, ticker: "PBR", companyName: "Petrobras (Brazil)", rating: "HOLD", signalDate: "2025-05-01", signalPrice: 13.50, theme: "Energy Infrastructure", rationale: "Brazil national oil company. Deep-water pre-salt leader. High dividend yield.", regime: "Weak Bull" },
+  { id: 19, ticker: "AMX", companyName: "América Móvil (Mexico)", rating: "HOLD", signalDate: "2025-05-15", signalPrice: 17.80, theme: "Emerging Market Champions", rationale: "LatAm largest telecom. 300M+ subscribers. Digital infrastructure backbone.", regime: "Weak Bull" },
+  { id: 20, ticker: "FMX", companyName: "FEMSA (Mexico)", rating: "HOLD", signalDate: "2025-05-15", signalPrice: 105.80, theme: "Consumer Staples", rationale: "Largest Coca-Cola bottler + OXXO convenience stores (21,000+). Defensive consumer.", regime: "Weak Bull" },
+  { id: 21, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 72.50, theme: "Healthcare", rationale: "India's largest pharma. Generics powerhouse + biosimilar pipeline.", regime: "Weak Bull" },
+  { id: 22, ticker: "UMC", companyName: "United Microelectronics (Taiwan)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 7.80, theme: "Semiconductors", rationale: "World #3 foundry. Mature node specialist. Benefits from broad chip demand.", regime: "Weak Bull" },
+  { id: 23, ticker: "PKX", companyName: "POSCO Holdings (Korea)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 42.50, theme: "Emerging Market Champions", rationale: "World #4 steelmaker. Pivoting to battery materials (lithium, nickel).", regime: "Weak Bull" },
+  { id: 24, ticker: "TTM", companyName: "Tata Motors (India)", rating: "HOLD", signalDate: "2025-06-01", signalPrice: 10.50, theme: "Emerging Market Champions", rationale: "India #1 commercial vehicles. Owns Jaguar Land Rover. EV transition underway.", regime: "Weak Bull" },
 ];
 
 // ── Horizon maturity calculation ─────────────────────────────────────────────
@@ -64,8 +78,12 @@ export default function RecommendationPerformancePage() {
   // Staged prices — demo values from signal period (may be outdated)
   const stagedPrices: Record<string, number> = {
     TSM: 178.52, ASML: 924.30, LLY: 820.40, CRWD: 355.20,
-    AMD: 162.30, AVGO: 178.50, PANW: 185.60, HLAL: 42.15,
-    "2222.SR": 8.25, ABB: 52.80, NVO: 110.50, ENPH: 98.45,
+    AMD: 162.30, AVGO: 178.50, PANW: 185.60, ABB: 52.80,
+    NVO: 110.50, ENPH: 98.45,
+    INFY: 19.20, NU: 14.50, SE: 125.80, CPNG: 25.40,
+    GLOB: 210.30, MMYT: 112.40, VALE: 10.80, PBR: 14.20,
+    AMX: 18.50, FMX: 110.20, RDY: 75.80, UMC: 8.10,
+    PKX: 44.20, TTM: 11.30,
   };
 
   // Get price source for display
@@ -281,11 +299,11 @@ export default function RecommendationPerformancePage() {
       <div className="card">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Average Return by Horizon (BUY Signals)</h2>
         <div className="grid gap-4 sm:grid-cols-5">
-          <HorizonAvg label="2 Weeks" days={14} signals={buySignals} getPrice={getCurrentPrice} />
-          <HorizonAvg label="1 Month" days={30} signals={buySignals} getPrice={getCurrentPrice} />
-          <HorizonAvg label="3 Months" days={90} signals={buySignals} getPrice={getCurrentPrice} />
-          <HorizonAvg label="6 Months" days={180} signals={buySignals} getPrice={getCurrentPrice} />
-          <HorizonAvg label="1 Year" days={365} signals={buySignals} getPrice={getCurrentPrice} />
+          <HorizonAvg label="2 Weeks" days={14} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+          <HorizonAvg label="1 Month" days={30} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+          <HorizonAvg label="3 Months" days={90} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+          <HorizonAvg label="6 Months" days={180} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+          <HorizonAvg label="1 Year" days={365} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
         </div>
       </div>
 
@@ -429,6 +447,10 @@ export default function RecommendationPerformancePage() {
   // Helper: format horizon cell
   function formatHorizon(signalDate: string, signalPrice: number, ticker: string, horizonDays: number): string {
     if (!isHorizonMatured(signalDate, horizonDays)) return "Pending";
+    // Only show horizon return if we have live data for this ticker
+    // Without historical snapshot at the exact horizon date, we can't calculate accurately
+    const source = getPriceSource(ticker);
+    if (source !== "live") return "N/A";
     const price = getCurrentPrice(ticker, signalPrice);
     const ret = calcReturn(signalPrice, price);
     return `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`;
@@ -437,8 +459,11 @@ export default function RecommendationPerformancePage() {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function HorizonAvg({ label, days, signals, getPrice }: { label: string; days: number; signals: Signal[]; getPrice: (ticker: string, fallback: number) => number }) {
+function HorizonAvg({ label, days, signals, getPrice, livePrices }: { label: string; days: number; signals: Signal[]; getPrice: (ticker: string, fallback: number) => number; livePrices: Record<string, number> }) {
   const matured = signals.filter((s) => isHorizonMatured(s.signalDate, days));
+  // Only calculate if we have live prices
+  const withLiveData = matured.filter((s) => livePrices[s.ticker]);
+
   if (matured.length === 0) return (
     <div className="text-center">
       <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
@@ -446,10 +471,19 @@ function HorizonAvg({ label, days, signals, getPrice }: { label: string; days: n
       <p className="text-[10px] text-muted-foreground">0/{signals.length} matured</p>
     </div>
   );
-  const avg = matured.reduce((sum, s) => {
+
+  if (withLiveData.length === 0) return (
+    <div className="text-center">
+      <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-bold text-muted-foreground">N/A</p>
+      <p className="text-[10px] text-muted-foreground">{matured.length} matured · no live data</p>
+    </div>
+  );
+
+  const avg = withLiveData.reduce((sum, s) => {
     const price = getPrice(s.ticker, s.signalPrice);
     return sum + ((price - s.signalPrice) / s.signalPrice) * 100;
-  }, 0) / matured.length;
+  }, 0) / withLiveData.length;
 
   return (
     <div className="text-center">
@@ -457,7 +491,7 @@ function HorizonAvg({ label, days, signals, getPrice }: { label: string; days: n
       <p className={`mt-1 text-lg font-bold ${avg >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
         {avg >= 0 ? "+" : ""}{avg.toFixed(1)}%
       </p>
-      <p className="text-[10px] text-muted-foreground">{matured.length}/{signals.length} matured</p>
+      <p className="text-[10px] text-muted-foreground">{withLiveData.length}/{signals.length} with live data</p>
     </div>
   );
 }
