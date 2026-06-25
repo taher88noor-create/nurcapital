@@ -228,6 +228,8 @@ async def api_fetch_prices_for_tickers(req: FetchTickersRequest):
             result = await fetch_prices(FetchRequest(ticker=ticker, days=5))
             if result.success and result.bars:
                 price_map[ticker] = result.bars[-1].close
+            else:
+                errors.append({"ticker": ticker, "error": result.error or "No bars returned"})
         except Exception as e:
             errors.append({"ticker": ticker, "error": str(e)})
 
@@ -236,6 +238,7 @@ async def api_fetch_prices_for_tickers(req: FetchTickersRequest):
         "errors": errors,
         "fetched": len(price_map),
         "failed": len(errors),
+        "tickers_requested": req.tickers,
     }
 
 
