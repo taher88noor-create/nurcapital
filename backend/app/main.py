@@ -17,6 +17,7 @@ app = FastAPI(
 )
 
 # CORS: allow localhost for dev + deployed frontend URL from env
+# For staging: allow all origins. Restrict in production.
 cors_origins = ["http://localhost:3000"]
 extra_origins = os.getenv("CORS_ORIGINS", "")
 if extra_origins:
@@ -24,8 +25,8 @@ if extra_origins:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for staging
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
