@@ -106,6 +106,16 @@ export default function RecommendationPerformancePage() {
     setRefreshError(null);
     setFailedTickers(new Set());
     const log: string[] = [];
+
+    // First wake up the backend (free tier may be sleeping)
+    try {
+      log.push("Waking backend...");
+      await fetch(`${API_URL}/api/health`, { signal: AbortSignal.timeout(60000) });
+      log.push("Backend awake.");
+    } catch {
+      log.push("Backend wake-up timed out. Trying price fetch anyway...");
+    }
+
     try {
       const tickers = SIGNAL_RECORDS.map((s) => s.ticker);
       log.push(`Requesting prices for ${tickers.length} tickers: ${tickers.join(", ")}`);
@@ -114,6 +124,7 @@ export default function RecommendationPerformancePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tickers }),
+        signal: AbortSignal.timeout(90000), // 90 second timeout for price fetch
       });
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const json = await res.json();
@@ -233,7 +244,7 @@ export default function RecommendationPerformancePage() {
           </div>
           <button onClick={refreshPerformance} disabled={refreshing}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
-            {refreshing ? `Refreshing ${SIGNAL_RECORDS.length} recommendations...` : "Refresh Performance"}
+            {refreshing ? "Waking backend & fetching prices..." : "Refresh Performance"}
           </button>
         </div>
       </div>
