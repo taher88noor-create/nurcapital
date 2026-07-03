@@ -65,16 +65,16 @@ function isHorizonMatured(signalDate: string, horizonDays: number): boolean {
 
 export default function RecommendationPerformancePage() {
   // Load cached prices from localStorage on mount
-  const loadCached = (): { prices: Record<string, number>; timestamp: string | null } => {
-    if (typeof window === "undefined") return { prices: {}, timestamp: null };
+  const loadCached = (): { prices: Record<string, number>; timestamp: string | null; isoTimestamp: string | null } => {
+    if (typeof window === "undefined") return { prices: {}, timestamp: null, isoTimestamp: null };
     try {
       const raw = localStorage.getItem("nc_prices");
       if (raw) {
         const parsed = JSON.parse(raw);
-        return { prices: parsed.prices || {}, timestamp: parsed.timestamp || null };
+        return { prices: parsed.prices || {}, timestamp: parsed.timestamp || null, isoTimestamp: parsed.isoTimestamp || null };
       }
     } catch { /* ignore parse errors */ }
-    return { prices: {}, timestamp: null };
+    return { prices: {}, timestamp: null, isoTimestamp: null };
   };
 
   const cached = loadCached();
@@ -84,12 +84,25 @@ export default function RecommendationPerformancePage() {
   const [failedTickers, setFailedTickers] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(cached.timestamp);
+  const [lastRefreshedIso, setLastRefreshedIso] = useState<string | null>(cached.isoTimestamp);
   const [dataMode, setDataMode] = useState<"stored" | "live">(Object.keys(cached.prices).length > 0 ? "live" : "stored");
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [filterRating, setFilterRating] = useState<string>("ALL");
   const [filterTheme, setFilterTheme] = useState<string>("ALL");
   const [expandedSignal, setExpandedSignal] = useState<number | null>(null);
   const [refreshLog, setRefreshLog] = useState<string[]>([]);
+
+  // Cache freshness calculation
+  const getCacheFreshness = (): { label: string; color: string; icon: string } => {
+    if (!lastRefreshedIso) return { label: "No market data loaded", color: "text-muted-foreground", icon: "○" };
+    const ageMs = Date.now() - new Date(lastRefreshedIso).getTime();
+    const ageHours = ageMs / (1000 * 60 * 60);
+    if (ageHours <= 24) return { label: "Live Market Data", color: "text-emerald-600 dark:text-emerald-400", icon: "🟢" };
+    if (ageHours <= 168) return { label: "Cached Market Data", color: "text-amber-600 dark:text-amber-400", icon: "🟡" };
+    return { label: "Market data may be outdated", color: "text-red-600 dark:text-red-400", icon: "🔴" };
+  };
+
+  const freshness = getCacheFreshness();
 
   // Staged prices — demo values from signal period (may be outdated)
   const stagedPrices: Record<string, number> = {
@@ -170,12 +183,14 @@ export default function RecommendationPerformancePage() {
         setDataMode("live");
         const now = new Date();
         const timestamp = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " UTC";
+        const isoTimestamp = now.toISOString();
         setLastRefreshed(timestamp);
-        log.push(`Refresh complete at ${new Date().toISOString()}`);
+        setLastRefreshedIso(isoTimestamp);
+        log.push(`Refresh complete at ${isoTimestamp}`);
 
         // Persist to localStorage
         try {
-          localStorage.setItem("nc_prices", JSON.stringify({ prices, timestamp }));
+          localStorage.setItem("nc_prices", JSON.stringify({ prices, timestamp, isoTimestamp }));
         } catch { /* storage full or unavailable */ }
       } else {
         throw new Error("No prices returned");
@@ -253,14 +268,17 @@ export default function RecommendationPerformancePage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <span className={`badge ${dataMode === "live" ? "badge-green" : "badge-amber"}`}>
-              {dataMode === "live" ? "● Live Market Data" : "● Stored Recommendation Data"}
+            <span className={`text-xs font-medium ${freshness.color}`}>
+              {freshness.icon} {freshness.label}
             </span>
             {dataMode === "stored" && (
               <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Click refresh for latest market prices.</p>
             )}
             {dataMode === "live" && lastRefreshed && (
-              <p className="mt-1 text-[10px] text-muted-foreground">Prices from {lastRefreshed}. Click refresh for latest.</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">Market prices updated: {lastRefreshed}</p>
+            )}
+            {freshness.icon === "🔴" && (
+              <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">Click Refresh Performance for the latest prices.</p>
             )}
           </div>
           <button onClick={refreshPerformance} disabled={refreshing}
@@ -433,13 +451,25 @@ export default function RecommendationPerformancePage() {
               <h3 className="text-sm font-semibold">{s.ticker} — {s.companyName}</h3>
               <button onClick={() => setExpandedSignal(null)} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div><p className="text-[10px] uppercase text-muted-foreground">Signal Date</p><p className="mt-1 text-sm font-medium">{s.signalDate}</p></div>
-              <div><p className="text-[10px] uppercase text-muted-foreground">Signal Price</p><p className="mt-1 text-sm font-mono font-medium">${s.signalPrice.toFixed(2)}</p></div>
-              <div><p className="text-[10px] uppercase text-muted-foreground">Current Price</p><p className="mt-1 text-sm font-mono font-medium">${price.toFixed(2)}</p></div>
-              <div><p className="text-[10px] uppercase text-muted-foreground">Current Return</p><p className={`mt-1 text-sm font-bold ${ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{ret >= 0 ? "+" : ""}{ret.toFixed(1)}%</p></div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <p className="text-[10px] uppercase text-muted-foreground">BUY Signal</p>
+                <p className="mt-1 text-sm font-medium">{s.signalDate}</p>
+                <p className="text-[10px] text-muted-foreground">Recommendation date (fixed)</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase text-muted-foreground">Signal Price</p>
+                <p className="mt-1 text-sm font-mono font-medium">${s.signalPrice.toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground">Price at recommendation</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase text-muted-foreground">Market Price</p>
+                <p className="mt-1 text-sm font-mono font-medium">${price.toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground">{lastRefreshed ? `Updated: ${lastRefreshed}` : "Staged data"}</p>
+              </div>
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div><p className="text-[10px] uppercase text-muted-foreground">Performance Since Recommendation</p><p className={`mt-1 text-lg font-bold ${ret >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{ret >= 0 ? "+" : ""}{ret.toFixed(1)}%</p></div>
               <div><p className="text-[10px] uppercase text-muted-foreground">Theme</p><p className="mt-1 text-sm">{s.theme}</p></div>
               <div><p className="text-[10px] uppercase text-muted-foreground">Market Regime at Signal</p><p className="mt-1 text-sm">{s.regime}</p></div>
             </div>
