@@ -64,12 +64,27 @@ function isHorizonMatured(signalDate: string, horizonDays: number): boolean {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function RecommendationPerformancePage() {
-  // Live prices (null until refreshed)
-  const [livePrices, setLivePrices] = useState<Record<string, number>>({});
+  // Load cached prices from localStorage on mount
+  const loadCached = (): { prices: Record<string, number>; timestamp: string | null } => {
+    if (typeof window === "undefined") return { prices: {}, timestamp: null };
+    try {
+      const raw = localStorage.getItem("nc_prices");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return { prices: parsed.prices || {}, timestamp: parsed.timestamp || null };
+      }
+    } catch { /* ignore parse errors */ }
+    return { prices: {}, timestamp: null };
+  };
+
+  const cached = loadCached();
+
+  // Live prices (initialized from localStorage if available)
+  const [livePrices, setLivePrices] = useState<Record<string, number>>(cached.prices);
   const [failedTickers, setFailedTickers] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
-  const [dataMode, setDataMode] = useState<"stored" | "live">("stored");
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(cached.timestamp);
+  const [dataMode, setDataMode] = useState<"stored" | "live">(Object.keys(cached.prices).length > 0 ? "live" : "stored");
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [filterRating, setFilterRating] = useState<string>("ALL");
   const [filterTheme, setFilterTheme] = useState<string>("ALL");
@@ -154,8 +169,14 @@ export default function RecommendationPerformancePage() {
         setLivePrices(prices);
         setDataMode("live");
         const now = new Date();
-        setLastRefreshed(now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " UTC");
+        const timestamp = now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + " " + now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " UTC";
+        setLastRefreshed(timestamp);
         log.push(`Refresh complete at ${new Date().toISOString()}`);
+
+        // Persist to localStorage
+        try {
+          localStorage.setItem("nc_prices", JSON.stringify({ prices, timestamp }));
+        } catch { /* storage full or unavailable */ }
       } else {
         throw new Error("No prices returned");
       }
@@ -238,8 +259,8 @@ export default function RecommendationPerformancePage() {
             {dataMode === "stored" && (
               <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Click refresh for latest market prices.</p>
             )}
-            {lastRefreshed && (
-              <p className="mt-1 text-[10px] text-muted-foreground">Last Updated: {lastRefreshed}</p>
+            {dataMode === "live" && lastRefreshed && (
+              <p className="mt-1 text-[10px] text-muted-foreground">Prices from {lastRefreshed}. Click refresh for latest.</p>
             )}
           </div>
           <button onClick={refreshPerformance} disabled={refreshing}
