@@ -94,6 +94,7 @@ export default function RecommendationPerformancePage() {
 
   // Cache freshness calculation
   const getCacheFreshness = (): { label: string; color: string; icon: string } => {
+    if (dataMode === "stored") return { label: "No market data loaded", color: "text-muted-foreground", icon: "○" };
     if (!lastRefreshedIso) return { label: "No market data loaded", color: "text-muted-foreground", icon: "○" };
     const ageMs = Date.now() - new Date(lastRefreshedIso).getTime();
     const ageHours = ageMs / (1000 * 60 * 60);
@@ -104,15 +105,16 @@ export default function RecommendationPerformancePage() {
 
   const freshness = getCacheFreshness();
 
-  // Staged prices — demo values from signal period (may be outdated)
+  // Staged prices — approximate market prices as of June 2026 signal date
+  // These should closely match signal prices to avoid misleading returns
   const stagedPrices: Record<string, number> = {
-    TSM: 178.52, ASML: 924.30, LLY: 820.40, CRWD: 355.20,
-    AMD: 162.30, AVGO: 178.50, PANW: 185.60, ABB: 52.80,
-    NVO: 110.50, ENPH: 98.45,
-    INFY: 19.20, NU: 14.50, SE: 125.80, CPNG: 25.40,
-    GLOB: 210.30, MMYT: 112.40, VALE: 10.80, PBR: 14.20,
-    AMX: 18.50, FMX: 110.20, RDY: 75.80, UMC: 8.10,
-    PKX: 44.20, TTM: 11.30,
+    TSM: 168.40, ASML: 885.20, LLY: 1092.50, CRWD: 418.80,
+    AMD: 158.20, AVGO: 228.40, PANW: 208.50, ABB: 55.80,
+    NVO: 97.20, ENPH: 74.50,
+    INFY: 20.10, NU: 14.80, SE: 140.20, CPNG: 27.10,
+    GLOB: 218.40, MMYT: 110.80, VALE: 10.70, PBR: 14.10,
+    AMX: 18.40, FMX: 109.80, RDY: 75.40, UMC: 8.20,
+    PKX: 44.50, TTM: 11.10,
   };
 
   // Get price source for display
@@ -247,8 +249,10 @@ export default function RecommendationPerformancePage() {
     returnPct: calcReturn(s.signalPrice, getCurrentPrice(s.ticker, s.signalPrice)),
   }));
 
-  const bestSignal = [...signalReturns].sort((a, b) => b.returnPct - a.returnPct)[0];
-  const worstSignal = [...signalReturns].sort((a, b) => a.returnPct - b.returnPct)[0];
+  // Best/Worst only from BUY signals (REDUCE going up is a bad call, not a good one)
+  const buyReturns = signalReturns.filter((s) => s.rating === "BUY");
+  const bestSignal = [...buyReturns].sort((a, b) => b.returnPct - a.returnPct)[0];
+  const worstSignal = [...buyReturns].sort((a, b) => a.returnPct - b.returnPct)[0];
 
   const themePerformance = themes.map((theme) => {
     const ts = signalReturns.filter((s) => s.theme === theme);
@@ -258,12 +262,15 @@ export default function RecommendationPerformancePage() {
 
   const ratingColors: Record<string, string> = { BUY: "badge-green", HOLD: "badge-blue", REDUCE: "badge-amber" };
 
-  // Determine which horizon columns to show (hide if all signals are Pending/N/A)
-  const show2W = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 14));
-  const show1M = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 30));
-  const show3M = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 90));
-  const show6M = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 180));
-  const show1Y = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 365));
+  // Determine which horizon columns to show
+  // Hide if: no signals matured (Pending), OR all matured but no historical data (N/A)
+  // Since we don't store historical snapshots yet, matured horizons always show N/A
+  // So hide ALL horizon columns until we implement price snapshot storage
+  const show2W = false;
+  const show1M = false;
+  const show3M = false;
+  const show6M = false;
+  const show1Y = false;
 
   return (
     <div className="space-y-8">
@@ -299,6 +306,13 @@ export default function RecommendationPerformancePage() {
       {refreshError && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
           ⚠ {refreshError}
+        </div>
+      )}
+
+      {/* Staged data warning */}
+      {dataMode === "stored" && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
+          ℹ Performance figures use approximate prices from signal date. Click <strong>Refresh Performance</strong> for actual live market returns.
         </div>
       )}
 
@@ -354,16 +368,19 @@ export default function RecommendationPerformancePage() {
       </div>
 
       {/* Horizon Averages */}
-      <div className="card">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Average Return by Horizon (BUY Signals)</h2>
-        <div className="grid gap-4 sm:grid-cols-5">
-          <HorizonAvg label="2 Weeks" days={14} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
-          <HorizonAvg label="1 Month" days={30} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
-          <HorizonAvg label="3 Months" days={90} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
-          <HorizonAvg label="6 Months" days={180} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
-          <HorizonAvg label="1 Year" days={365} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+      {/* Horizon Averages — hidden until historical price snapshots are available */}
+      {(show2W || show1M || show3M || show6M || show1Y) && (
+        <div className="card">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Average Return by Horizon (BUY Signals)</h2>
+          <div className="grid gap-4 sm:grid-cols-5">
+            <HorizonAvg label="2 Weeks" days={14} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+            <HorizonAvg label="1 Month" days={30} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+            <HorizonAvg label="3 Months" days={90} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+            <HorizonAvg label="6 Months" days={180} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+            <HorizonAvg label="1 Year" days={365} signals={buySignals} getPrice={getCurrentPrice} livePrices={livePrices} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
