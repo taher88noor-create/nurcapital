@@ -1,7 +1,32 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { getAssetIdentity } from "@/data/asset-identity";
+
+// ── Animated Counter Hook ────────────────────────────────────────────────────
+
+function useAnimatedNumber(target: number, duration = 600): number {
+  const [current, setCurrent] = useState(0);
+  const prevTarget = useRef(target);
+
+  useEffect(() => {
+    const start = prevTarget.current;
+    prevTarget.current = target;
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCurrent(start + (target - start) * eased);
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [target, duration]);
+
+  return current;
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -330,27 +355,19 @@ export default function RecommendationPerformancePage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="card">
-          <p className="text-[11px] font-medium uppercase text-muted-foreground">Total BUY Signals</p>
-          <p className="mt-1 text-2xl font-bold">{buySignals.length}</p>
-        </div>
-        <div className="card">
-          <p className="text-[11px] font-medium uppercase text-muted-foreground">Avg BUY Return</p>
-          <p className={`mt-1 text-2xl font-bold ${avgBuyReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-            {avgBuyReturn >= 0 ? "+" : ""}{avgBuyReturn.toFixed(1)}%
-          </p>
-        </div>
-        <div className="card">
+        <AnimatedCard label="Total BUY Signals" value={buySignals.length} suffix="" />
+        <AnimatedCard label="Avg BUY Return" value={avgBuyReturn} suffix="%" signed />
+        <div className="card card-hover fade-in">
           <p className="text-[11px] font-medium uppercase text-muted-foreground">Best Signal</p>
           <p className="mt-1 text-lg font-bold">{bestSignal?.ticker}</p>
           <p className="text-xs text-emerald-600 dark:text-emerald-400">+{bestSignal?.returnPct.toFixed(1)}%</p>
         </div>
-        <div className="card">
+        <div className="card card-hover fade-in">
           <p className="text-[11px] font-medium uppercase text-muted-foreground">Worst Signal</p>
           <p className="mt-1 text-lg font-bold">{worstSignal?.ticker}</p>
-          <p className={`text-xs ${worstSignal?.returnPct >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{worstSignal?.returnPct.toFixed(1)}%</p>
+          <p className={`text-xs ${(worstSignal?.returnPct ?? 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>{worstSignal?.returnPct.toFixed(1)}%</p>
         </div>
-        <div className="card">
+        <div className="card card-hover fade-in">
           <p className="text-[11px] font-medium uppercase text-muted-foreground">Best Theme</p>
           <p className="mt-1 text-lg font-bold">{themePerformance[0]?.theme}</p>
           <p className="text-xs text-emerald-600 dark:text-emerald-400">+{themePerformance[0]?.avg.toFixed(1)}%</p>
@@ -578,6 +595,25 @@ function HorizonAvg({ label, days, signals, getPrice, livePrices }: { label: str
         {avg >= 0 ? "+" : ""}{avg.toFixed(1)}%
       </p>
       <p className="text-[10px] text-muted-foreground">{matured.length}/{signals.length} matured</p>
+    </div>
+  );
+}
+
+// ── Animated Card Component ──────────────────────────────────────────────────
+
+function AnimatedCard({ label, value, suffix, signed }: { label: string; value: number; suffix: string; signed?: boolean }) {
+  const animated = useAnimatedNumber(value);
+  const display = suffix === "%" ? animated.toFixed(1) : Math.round(animated).toString();
+  const color = signed
+    ? value >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+    : "text-foreground";
+
+  return (
+    <div className="card card-hover fade-in">
+      <p className="text-[11px] font-medium uppercase text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${color}`}>
+        {signed && value >= 0 ? "+" : ""}{display}{suffix}
+      </p>
     </div>
   );
 }
