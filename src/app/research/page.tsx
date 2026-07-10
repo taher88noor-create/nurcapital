@@ -47,6 +47,18 @@ const SIGNAL_RECORDS: Signal[] = [
   { id: 22, ticker: "UMC", companyName: "United Microelectronics (Taiwan)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 8.05, theme: "Semiconductors", rationale: "World #3 foundry. Mature node specialist.", regime: "Weak Bull" },
   { id: 23, ticker: "PKX", companyName: "POSCO Holdings (Korea)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 43.80, theme: "Emerging Market Champions", rationale: "World #4 steelmaker. Pivoting to battery materials.", regime: "Weak Bull" },
   { id: 24, ticker: "TTM", companyName: "Tata Motors (India)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 10.80, theme: "Emerging Market Champions", rationale: "India #1 commercial vehicles. Owns Jaguar Land Rover.", regime: "Weak Bull" },
+  // ── New Emerging Market Signals (10 Jul 2026) ──────────────────────────────
+  { id: 25, ticker: "ISDE.L", companyName: "iShares MSCI EM Islamic UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 18.50, theme: "Emerging Market Champions", rationale: "Only LSE-listed Shariah-compliant EM ETF. Pre-screened Islamic universe. Diversified across Taiwan, India, Korea, Brazil. 0.85% TER. Structural EM growth + compliance built in. Trend: above MA50, positive momentum. Fundamentals: tracks profitable EM companies excluding banks/gambling/weapons.", regime: "Weak Bull" },
+  { id: 26, ticker: "ISWD.L", companyName: "iShares MSCI World Islamic UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 36.40, theme: "Halal Finance", rationale: "Global developed market Shariah ETF. LSE-listed. Heavy tech weighting (no banks, alcohol, weapons by design). 0.30% TER. 32% 1Y return. Trend: sustained uptrend, above MA50/MA200. Fundamentals: top holdings are AAPL, MSFT-free tech (excludes Israel-exposed), healthcare, consumer.", regime: "Weak Bull" },
+  { id: 27, ticker: "HTWD.L", companyName: "HSBC MSCI Taiwan Capped UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 45.80, theme: "Semiconductors", rationale: "Pure Taiwan semiconductor exposure via LSE. TSMC ~35% weight. Captures AI chip demand without single-stock risk. Trend: strong uptrend driven by AI capex cycle. Fundamentals: Taiwan semiconductor ecosystem growing 15-20% YoY. 0.30% TER.", regime: "Weak Bull" },
+  { id: 28, ticker: "INFY", companyName: "Infosys (India)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 20.40, theme: "AI Infrastructure", rationale: "India #2 IT services. 1,800+ enterprise clients. Leading AI implementation partner. Revenue growing 12-15% with expanding margins. Trend: breakout above MA50 after consolidation. Fundamentals: 20%+ ROE, net cash balance sheet, 3% dividend yield. No debt concern.", regime: "Weak Bull" },
+  { id: 29, ticker: "NU", companyName: "Nu Holdings (Brazil)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 15.20, theme: "Emerging Market Champions", rationale: "World's largest digital bank (200M+ customers). Fee-based model passes Shariah screening (not traditional interest lending). Revenue growing 40%+ YoY. Now profitable. Trend: strong uptrend, above all MAs. Fundamentals: 30%+ ROE, operating leverage, massive TAM in underbanked LatAm.", regime: "Weak Bull" },
+  { id: 30, ticker: "SE", companyName: "Sea Limited (Singapore)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 142.80, theme: "Emerging Market Champions", rationale: "SE Asia's largest digital platform. Shopee e-commerce dominates region. SeaMoney fintech expanding. Now sustainably profitable. Trend: resuming uptrend after correction. Fundamentals: GMV growing 20%+, take rate improving, positive EBITDA. Gaming (Garena) provides cash flow anchor.", regime: "Weak Bull" },
+  { id: 31, ticker: "CPNG", companyName: "Coupang (South Korea)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 27.80, theme: "Emerging Market Champions", rationale: "Korea's Amazon. Rocket delivery infrastructure creates moat. Now profitable with expanding margins. Trend: above MA50 and MA200, steady climb. Fundamentals: revenue growing 18%+, improving unit economics, expanding into Taiwan and food delivery.", regime: "Weak Bull" },
+  { id: 32, ticker: "GLOB", companyName: "Globant (Argentina)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 220.50, theme: "AI Infrastructure", rationale: "AI services leader for enterprises. Argentina-based, Luxembourg-domiciled (clean structure). Revenue growing 15%+ organically. Trend: recovering from sector correction, above MA50. Fundamentals: 16% EBITDA margin, blue-chip client roster (Google, Disney, EA), AI revenue accelerating.", regime: "Weak Bull" },
+  { id: 33, ticker: "MMYT", companyName: "MakeMyTrip (India)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 115.60, theme: "Emerging Market Champions", rationale: "India's largest OTA. Benefiting from rising middle class travel. Asset-light, platform model. Trend: strong uptrend, consistently above MA50. Fundamentals: revenue growing 25%+, profitable, $200B Indian travel market with <10% online penetration.", regime: "Weak Bull" },
+  { id: 34, ticker: "VALE", companyName: "Vale SA (Brazil)", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 10.90, theme: "Emerging Market Champions", rationale: "World's largest iron ore producer. Essential to global steel supply. Nickel exposure for EV batteries. 7%+ dividend yield. Trend: range-bound, below MA200 but above support. Fundamentals: lowest-cost producer, strong free cash flow, capital discipline. China demand uncertainty limits upside.", regime: "Weak Bull" },
+  { id: 35, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 76.40, theme: "Healthcare", rationale: "India's largest pharma. Generics powerhouse serving US/EU markets. Biosimilar pipeline growing. Trend: steady but not accelerating, near MA50. Fundamentals: 18% ROE, growing US market share, pipeline optionality. Conservative balance sheet.", regime: "Weak Bull" },
 ];
 
 // ── Horizon maturity calculation ─────────────────────────────────────────────
@@ -105,16 +117,16 @@ export default function RecommendationPerformancePage() {
 
   const freshness = getCacheFreshness();
 
-  // Staged prices — approximate market prices as of June 2026 signal date
-  // These should closely match signal prices to avoid misleading returns
+  // Staged prices — approximate market prices as of signal dates
   const stagedPrices: Record<string, number> = {
     TSM: 168.40, ASML: 885.20, LLY: 1092.50, CRWD: 418.80,
     AMD: 158.20, AVGO: 228.40, PANW: 208.50, ABB: 55.80,
     NVO: 97.20, ENPH: 74.50,
-    INFY: 20.10, NU: 14.80, SE: 140.20, CPNG: 27.10,
-    GLOB: 218.40, MMYT: 110.80, VALE: 10.70, PBR: 14.10,
-    AMX: 18.40, FMX: 109.80, RDY: 75.40, UMC: 8.20,
+    INFY: 20.40, NU: 15.20, SE: 142.80, CPNG: 27.80,
+    GLOB: 220.50, MMYT: 115.60, VALE: 10.90, PBR: 14.10,
+    AMX: 18.40, FMX: 109.80, RDY: 76.40, UMC: 8.20,
     PKX: 44.50, TTM: 11.10,
+    "ISDE.L": 18.50, "ISWD.L": 36.40, "HTWD.L": 45.80,
   };
 
   // Get price source for display
