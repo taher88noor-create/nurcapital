@@ -258,6 +258,13 @@ export default function RecommendationPerformancePage() {
 
   const ratingColors: Record<string, string> = { BUY: "badge-green", HOLD: "badge-blue", REDUCE: "badge-amber" };
 
+  // Determine which horizon columns to show (hide if all signals are Pending/N/A)
+  const show2W = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 14));
+  const show1M = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 30));
+  const show3M = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 90));
+  const show6M = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 180));
+  const show1Y = SIGNAL_RECORDS.some((s) => isHorizonMatured(s.signalDate, 365));
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -393,11 +400,11 @@ export default function RecommendationPerformancePage() {
               <th className="pb-2 pr-3 text-right">Current Price</th>
               <th className="pb-2 pr-3 text-right">Current Return</th>
               <th className="pb-2 pr-3 text-center">Source</th>
-              <th className="pb-2 pr-3 text-right">2W</th>
-              <th className="pb-2 pr-3 text-right">1M</th>
-              <th className="pb-2 pr-3 text-right">3M</th>
-              <th className="pb-2 pr-3 text-right">6M</th>
-              <th className="pb-2 text-right">1Y</th>
+              {show2W && <th className="pb-2 pr-3 text-right">2W</th>}
+              {show1M && <th className="pb-2 pr-3 text-right">1M</th>}
+              {show3M && <th className="pb-2 pr-3 text-right">3M</th>}
+              {show6M && <th className="pb-2 pr-3 text-right">6M</th>}
+              {show1Y && <th className="pb-2 text-right">1Y</th>}
             </tr>
           </thead>
           <tbody>
@@ -426,11 +433,11 @@ export default function RecommendationPerformancePage() {
                     {`${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`}
                   </td>
                   <td className={`py-2.5 pr-3 text-center text-[10px] font-medium ${sourceColor}`}>{sourceLabel}</td>
-                  <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 14)}</td>
-                  <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 30)}</td>
-                  <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 90)}</td>
-                  <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 180)}</td>
-                  <td className="py-2.5 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 365)}</td>
+                  {show2W && <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 14)}</td>}
+                  {show1M && <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 30)}</td>}
+                  {show3M && <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 90)}</td>}
+                  {show6M && <td className="py-2.5 pr-3 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 180)}</td>}
+                  {show1Y && <td className="py-2.5 text-right text-xs">{formatHorizon(s.signalDate, s.signalPrice, s.ticker, 365)}</td>}
                 </tr>
               );
             })}
