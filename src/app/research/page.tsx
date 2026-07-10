@@ -510,11 +510,10 @@ export default function RecommendationPerformancePage() {
   // Helper: format horizon cell
   function formatHorizon(signalDate: string, signalPrice: number, ticker: string, horizonDays: number): string {
     if (!isHorizonMatured(signalDate, horizonDays)) return "Pending";
-    // Horizon has matured — show return if we have any price data
-    const price = getCurrentPrice(ticker, signalPrice);
-    if (price === signalPrice) return "Pending"; // No price data at all
-    const ret = calcReturn(signalPrice, price);
-    return `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`;
+    // Horizon has matured but we don't store historical price snapshots yet.
+    // We can only show accurate horizon returns when we have the price AT the horizon date.
+    // For now, mark as "N/A" — in future, store periodic price snapshots.
+    return "N/A";
   }
 }
 
