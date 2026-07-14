@@ -94,11 +94,15 @@ export default function ThemesPage() {
   const [customTags, setCustomTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [promoted, setPromoted] = useState<string[]>([]);
+  const [promoteMessage, setPromoteMessage] = useState<string | null>(null);
 
   // Load custom tags from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("nc_custom_tags");
     if (saved) setCustomTags(JSON.parse(saved));
+    const savedPromoted = localStorage.getItem("nc_promoted");
+    if (savedPromoted) setPromoted(JSON.parse(savedPromoted));
   }, []);
 
   // Save custom tags
@@ -121,6 +125,18 @@ export default function ThemesPage() {
 
   const toggleFilter = (tag: string) => {
     setActiveFilters((prev) => prev.includes(tag) ? prev.filter((f) => f !== tag) : [...prev, tag]);
+  };
+
+  const handlePromote = (ticker: string, name: string) => {
+    // Save to localStorage as promoted assets
+    const existing = JSON.parse(localStorage.getItem("nc_promoted") || "[]");
+    if (!existing.includes(ticker)) {
+      existing.push(ticker);
+      localStorage.setItem("nc_promoted", JSON.stringify(existing));
+    }
+    setPromoted((prev) => [...prev, ticker]);
+    setPromoteMessage(`✓ ${ticker} (${name}) added to Conviction List request. Ask analyst to review in Kiro.`);
+    setTimeout(() => setPromoteMessage(null), 4000);
   };
 
   // Filter and rank assets by active filters
@@ -244,6 +260,13 @@ export default function ThemesPage() {
         )}
       </div>
 
+      {/* Promote Message */}
+      {promoteMessage && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400 fade-in">
+          {promoteMessage}
+        </div>
+      )}
+
       {/* Results */}
       <div className="card">
         <div className="mb-4 flex items-center justify-between">
@@ -276,6 +299,12 @@ export default function ThemesPage() {
               {"score" in asset && (
                 <span className="text-xs font-medium text-muted-foreground">{(asset as any).score}pts</span>
               )}
+              <button
+                onClick={() => handlePromote(asset.ticker, asset.companyName)}
+                className="shrink-0 rounded-lg border border-brand-300 px-3 py-1.5 text-[10px] font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-400 dark:hover:bg-brand-950/30"
+              >
+                + Conviction List
+              </button>
             </div>
           ))}
         </div>
