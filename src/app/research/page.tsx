@@ -42,6 +42,7 @@ interface Signal {
   theme: string;
   rationale: string;
   regime: string;
+  assetType?: "stock" | "etf" | "fund";
 }
 
 const SIGNAL_RECORDS: Signal[] = [
@@ -83,7 +84,14 @@ const SIGNAL_RECORDS: Signal[] = [
   { id: 32, ticker: "GLOB", companyName: "Globant (Argentina)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 220.50, theme: "AI Infrastructure", rationale: "AI services leader for enterprises. Argentina-based, Luxembourg-domiciled (clean structure). Revenue growing 15%+ organically. Trend: recovering from sector correction, above MA50. Fundamentals: 16% EBITDA margin, blue-chip client roster (Google, Disney, EA), AI revenue accelerating.", regime: "Weak Bull" },
   { id: 33, ticker: "MMYT", companyName: "MakeMyTrip (India)", rating: "BUY", signalDate: "2026-07-10", signalPrice: 115.60, theme: "Emerging Market Champions", rationale: "India's largest OTA. Benefiting from rising middle class travel. Asset-light, platform model. Trend: strong uptrend, consistently above MA50. Fundamentals: revenue growing 25%+, profitable, $200B Indian travel market with <10% online penetration.", regime: "Weak Bull" },
   { id: 34, ticker: "VALE", companyName: "Vale SA (Brazil)", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 10.90, theme: "Emerging Market Champions", rationale: "World's largest iron ore producer. Essential to global steel supply. Nickel exposure for EV batteries. 7%+ dividend yield. Trend: range-bound, below MA200 but above support. Fundamentals: lowest-cost producer, strong free cash flow, capital discipline. China demand uncertainty limits upside.", regime: "Weak Bull" },
-  { id: 35, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 76.40, theme: "Healthcare", rationale: "India's largest pharma. Generics powerhouse serving US/EU markets. Biosimilar pipeline growing. Trend: steady but not accelerating, near MA50. Fundamentals: 18% ROE, growing US market share, pipeline optionality. Conservative balance sheet.", regime: "Weak Bull" },
+  { id: 35, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 76.40, theme: "Healthcare", rationale: "India's largest pharma. Generics powerhouse serving US/EU markets. Biosimilar pipeline growing. Trend: steady but not accelerating, near MA50. Fundamentals: 18% ROE, growing US market share, pipeline optionality. Conservative balance sheet.", regime: "Weak Bull", assetType: "stock" },
+  // ── Funds & ETFs (New — Jul 2026) ──────────────────────────────────────────
+  { id: 36, ticker: "SEMI.L", companyName: "iShares MSCI Global Semiconductors UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 575.00, theme: "Semiconductors", rationale: "Pure global semiconductor ETF. +158% 1Y. Holdings: TSMC, ASML, Broadcom, AMD. No weapons/banks. 0.35% TER. Massive sustained uptrend above all MAs.", regime: "Weak Bull", assetType: "etf" },
+  { id: 37, ticker: "SMH.L", companyName: "VanEck Semiconductor UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 10960.00, theme: "Semiconductors", rationale: "Europe's first semi ETF. $9B AUM. +89% YTD. Excludes weapons. Pure-play (50%+ revenue). 0.35% TER. Strong uptrend.", regime: "Weak Bull", assetType: "etf" },
+  { id: 38, ticker: "INRG.L", companyName: "iShares Global Clean Energy UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 850.00, theme: "Clean Energy", rationale: "Solar/wind/hydrogen. Cyclically weak (rates) but structurally sound. 0.65% TER. Below MA200, range-bound. Wait for rate cycle turn.", regime: "Weak Bull", assetType: "etf" },
+  { id: 39, ticker: "RENW.L", companyName: "L&G Clean Energy UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 920.00, theme: "Clean Energy", rationale: "Broader clean energy. Includes grid storage. 0.49% TER. Range-bound. Captures energy transition infrastructure.", regime: "Weak Bull", assetType: "etf" },
+  { id: 40, ticker: "HEAL.L", companyName: "iShares Healthcare Innovation UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 780.00, theme: "Healthcare", rationale: "Biotech/medtech innovation. Higher growth, higher vol. 0.40% TER. Recovering from correction. GLP-1 + gene therapy catalysts.", regime: "Weak Bull", assetType: "etf" },
+  { id: 41, ticker: "VFEM.L", companyName: "Vanguard FTSE Emerging Markets UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 5200.00, theme: "Emerging Market Champions", rationale: "Cheapest EM exposure (0.22% TER). Broad. Not Shariah-screened. Use alongside ISDE. Above MA50. 15% 1Y.", regime: "Weak Bull", assetType: "etf" },
 ];
 
 // ── Horizon maturity calculation ─────────────────────────────────────────────
@@ -126,18 +134,19 @@ export default function RecommendationPerformancePage() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [filterRating, setFilterRating] = useState<string>("ALL");
   const [filterTheme, setFilterTheme] = useState<string>("ALL");
+  const [filterAssetType, setFilterAssetType] = useState<string>("ALL");
   const [expandedSignal, setExpandedSignal] = useState<number | null>(null);
   const [refreshLog, setRefreshLog] = useState<string[]>([]);
 
   // Cache freshness calculation
   const getCacheFreshness = (): { label: string; color: string; icon: string } => {
-    if (dataMode === "stored") return { label: "No market data loaded", color: "text-muted-foreground", icon: "○" };
-    if (!lastRefreshedIso) return { label: "No market data loaded", color: "text-muted-foreground", icon: "○" };
+    if (dataMode === "stored") return { label: "Analyst has not reviewed yet", color: "text-muted-foreground", icon: "○" };
+    if (!lastRefreshedIso) return { label: "Analyst has not reviewed yet", color: "text-muted-foreground", icon: "○" };
     const ageMs = Date.now() - new Date(lastRefreshedIso).getTime();
     const ageHours = ageMs / (1000 * 60 * 60);
-    if (ageHours <= 24) return { label: "Live Market Data", color: "text-emerald-600 dark:text-emerald-400", icon: "🟢" };
-    if (ageHours <= 168) return { label: "Cached Market Data", color: "text-amber-600 dark:text-amber-400", icon: "🟡" };
-    return { label: "Market data may be outdated", color: "text-red-600 dark:text-red-400", icon: "🔴" };
+    if (ageHours <= 24) return { label: "Analyst reviewed today", color: "text-emerald-600 dark:text-emerald-400", icon: "🟢" };
+    if (ageHours <= 168) return { label: "Analyst reviewed this week", color: "text-amber-600 dark:text-amber-400", icon: "🟡" };
+    return { label: "Analyst review overdue", color: "text-red-600 dark:text-red-400", icon: "🔴" };
   };
 
   const freshness = getCacheFreshness();
@@ -152,6 +161,8 @@ export default function RecommendationPerformancePage() {
     AMX: 18.40, FMX: 109.80, RDY: 76.40, UMC: 8.20,
     PKX: 44.50, TTM: 11.10,
     "ISDE.L": 1850.00, "ISWD.L": 4928.00, "HTWD.L": 4582.00,
+    "SEMI.L": 575.00, "SMH.L": 10960.00, "INRG.L": 850.00,
+    "RENW.L": 920.00, "HEAL.L": 780.00, "VFEM.L": 5200.00,
   };
 
   // Get price source for display
@@ -236,7 +247,7 @@ export default function RecommendationPerformancePage() {
       }
     } catch (e) {
       log.push(`REFRESH FAILED: ${e}`);
-      setRefreshError("Unable to refresh market prices. Showing previously stored recommendation performance.");
+      setRefreshError("Unable to fetch latest market prices. Showing last known data.");
       setFailedTickers(new Set());
     }
     setRefreshLog(log);
@@ -265,8 +276,15 @@ export default function RecommendationPerformancePage() {
   };
 
   // Derived data
+  const getAssetType = (s: Signal): string => {
+    if (s.assetType) return s.assetType;
+    if (s.ticker.endsWith(".L")) return "etf";
+    return "stock";
+  };
+
   const themes = [...new Set(SIGNAL_RECORDS.map((s) => s.theme))];
   const filtered = SIGNAL_RECORDS.filter((s) => {
+    if (filterAssetType !== "ALL" && getAssetType(s) !== filterAssetType) return false;
     if (filterRating === "AJBELL") {
       const identity = getAssetIdentity(s.ticker);
       if (!identity || !identity.ajBellActionable) return false;
@@ -314,8 +332,8 @@ export default function RecommendationPerformancePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Recommendation Performance</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Historical tracking of research signals — performance since recommendation date</p>
+          <h1 className="text-2xl font-bold tracking-tight">Conviction List & Performance</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Tracking direction and performance of assets we believe in</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
@@ -323,18 +341,18 @@ export default function RecommendationPerformancePage() {
               {freshness.icon} {freshness.label}
             </span>
             {dataMode === "stored" && (
-              <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Click refresh for latest market prices.</p>
+              <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Ask analyst to review for latest market direction.</p>
             )}
             {dataMode === "live" && lastRefreshed && (
-              <p className="mt-1 text-[10px] text-muted-foreground">Market prices updated: {lastRefreshed}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">Last reviewed: {lastRefreshed}</p>
             )}
             {freshness.icon === "🔴" && (
-              <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">Click Refresh Performance for the latest prices.</p>
+              <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">Click Ask analyst to review for the latest prices.</p>
             )}
           </div>
           <button onClick={refreshPerformance} disabled={refreshing}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
-            {refreshing ? "Waking backend & fetching prices..." : "Refresh Performance"}
+            {refreshing ? "Analyst reviewing..." : "Ask analyst to review"}
           </button>
         </div>
       </div>
@@ -346,10 +364,10 @@ export default function RecommendationPerformancePage() {
         </div>
       )}
 
-      {/* Staged data warning */}
+      {/* Staged data info */}
       {dataMode === "stored" && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
-          ℹ Performance figures use approximate prices from signal date. Click <strong>Refresh Performance</strong> for actual live market returns.
+          ℹ Showing prices from signal date. Click <strong>Ask analyst to review</strong> for latest market direction.
         </div>
       )}
 
@@ -428,6 +446,11 @@ export default function RecommendationPerformancePage() {
             className="rounded" />
           AJ Bell Actionable only
         </label>
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-panel p-0.5 dark:border-border-dark dark:bg-panel-dark">
+          <button onClick={() => setFilterAssetType("ALL")} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${filterAssetType === "ALL" ? "bg-white shadow dark:bg-slate-700" : "text-muted-foreground"}`}>All</button>
+          <button onClick={() => setFilterAssetType("stock")} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${filterAssetType === "stock" ? "bg-white shadow dark:bg-slate-700" : "text-muted-foreground"}`}>Stocks</button>
+          <button onClick={() => setFilterAssetType("etf")} className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${filterAssetType === "etf" ? "bg-white shadow dark:bg-slate-700" : "text-muted-foreground"}`}>ETFs & Funds</button>
+        </div>
         <span className="self-center text-xs text-muted-foreground">{filtered.length} signals</span>
       </div>
 
