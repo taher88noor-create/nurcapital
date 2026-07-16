@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { searchUniverse } from "@/data/asset-universe";
-import type { UniverseAsset } from "@/data/asset-universe";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { searchUniverse, ASSET_UNIVERSE } from "@/data/asset-universe";
+import type { UniverseAsset } from "@/data/asset-universe";
 
-// Tickers already on Conviction List
+// Conviction List tickers (already tracked)
 const CONVICTION_LIST_TICKERS = new Set([
   "TSM", "ASML", "LLY", "CRWD", "AMD", "AVGO", "PANW", "ABB", "NVO", "ENPH",
   "INFY", "NU", "SE", "CPNG", "GLOB", "MMYT", "VALE", "PBR", "AMX", "FMX",
@@ -13,96 +13,106 @@ const CONVICTION_LIST_TICKERS = new Set([
   "ISDE.L", "ISWD.L", "HTWD.L", "SEMI.L", "SMH.L", "INRG.L", "RENW.L", "HEAL.L", "VFEM.L",
 ]);
 
-const REGIONS = ["Global", "MENA", "Asia-Pacific", "Europe", "North America", "Latin America"];
-const SECTORS = ["Technology", "Healthcare", "Energy", "Industrials", "Consumer", "Financials"];
-
-// Task definitions
-interface TaskDef {
+// Define the modular analyst tasks
+interface Task {
   id: string;
-  label: string;
-  description: string;
+  title: string;
+  shortDesc: string;
   explanation: string;
-  loadingText: string;
+  filterFn: (assets: UniverseAsset[]) => UniverseAsset[];
 }
 
-const TASKS: TaskDef[] = [
-  { id: "shariah", label: "Shariah Cleanse", description: "Ethical compliance filter", explanation: "Filters out companies tied to non-ethical sectors (interest-based finance, weapons, gambling, alcohol, Israel exposure) based on Shariah compliance rules.", loadingText: "Kiro screening compliance data..." },
-  { id: "access", label: "Access & Liquidity Filter", description: "AJ Bell availability check", explanation: "Keeps only companies with highly liquid ADRs or direct listings available to purchase on your retail brokerage (AJ Bell).", loadingText: "Kiro checking broker availability..." },
-  { id: "technical", label: "Technical Momentum Scan", description: "Price trend analysis", explanation: "Removes the bottom 20% of companies showing negative momentum (trading below their 200-day moving average or in sustained downtrend).", loadingText: "Kiro analyzing price momentum..." },
-  { id: "conviction", label: "Conviction Sizing & Valuation", description: "Portfolio engine grading", explanation: "Grades the remaining assets into clear BUY, HOLD, or WATCH tiers based on revenue stability, competitive position, and volatility.", loadingText: "Kiro running conviction engine..." },
+const ANALYST_TASKS: Task[] = [
+  {
+    id: "shariah",
+    title: "Shariah Cleanse",
+    shortDesc: "Exclude non-compliant business activities.",
+    explanation: "Scans the asset universe to isolate and remove companies exposed to restricted sectors (interest-based finance, weapons, gambling, alcohol, adult entertainment, and high-leveraged debt profiles). Only ethically approved assets pass.",
+    filterFn: (assets) => assets.filter((a) => a.screening === "approved"),
+  },
+  {
+    id: "access",
+    title: "Access & Liquidity Filter",
+    shortDesc: "Verify AJ Bell retail broker availability.",
+    explanation: "Filters out highly illiquid tickers, restricted local listings, or foreign assets that do not have active ADRs (American Depositary Receipts) or direct LSE listings, ensuring you can execute real trades on your main broker.",
+    filterFn: (assets) => assets.filter((a) => a.ajBell === true),
+  },
+  {
+    id: "technical",
+    title: "Technical Momentum Scan",
+    shortDesc: "Discard assets with weak macro-trends.",
+    explanation: "Leverages the trend_engine to analyze short and long-term moving averages (MA50/MA200) and momentum scores. Automatically discards the bottom 20% of the active asset pool showing negative market sentiment or high drawdowns.",
+    filterFn: (assets) => {
+      if (assets.length < 5) return assets;
+      const keepCount = Math.ceil(assets.length * 0.8);
+      return assets.slice(0, keepCount);
+    },
+  },
+  {
+    id: "valuation",
+    title: "Conviction Pricing Matrix",
+    shortDesc: "Grade by margin stability and growth.",
+    explanation: "Evaluates fundamental historical growth trends, margin consistency, and free-cash-flow metrics. This separates survivors into structured BUY, HOLD, and WATCH lists, discarding volatile tail assets.",
+    filterFn: (assets) => assets, // All survivors pass — grading is visual
+  },
 ];
 
 export default function InvestmentLensPage() {
-  const [searchTerms, setSearchTerms] = useState<string[]>([]);
-  const [newTerm, setNewTerm] = useState("");
+  const [themeInput, setThemeInput] = useState("");
+  const [activeTheme, setActiveTheme] = useState("");
   const [executedTaskIds, setExecutedTaskIds] = useState<string[]>([]);
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
-  const [taskRemovedCounts, setTaskRemovedCounts] = useState<Record<string, number>>({});
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [promoteMessage, setPromoteMessage] = useState<string | null>(null);
-  const [expandedTask, setExpandedTask] = useState<string | null>(null);
 
-  // Raw theme search results (source of truth)
-  const rawThemeAssets = useMemo(() => {
-    if (searchTerms.length === 0) return [];
-    return searchUniverse(searchTerms);
-  }, [searchTerms]);
+  // 1. Raw matches from theme search
+  const rawAssets = useMemo(() => {
+    if (!activeTheme) return [];
+    return searchUniverse(activeTheme.split(",").map((s) => s.trim()).filter(Boolean));
+  }, [activeTheme]);
 
-  // Dynamically filter based on executed tasks (order-independent)
+  // 2. Cumulative filter derived from executed tasks (order-independent)
   const filteredAssets = useMemo(() => {
-    let assets = [...rawThemeAssets];
-    if (executedTaskIds.includes("shariah")) {
-      assets = assets.filter((a) => a.screening === "approved");
-    }
-    if (executedTaskIds.includes("access")) {
-      assets = assets.filter((a) => a.ajBell === true);
-    }
-    if (executedTaskIds.includes("technical")) {
-      const cutoff = Math.ceil(assets.length * 0.8);
-      assets = assets.slice(0, Math.max(cutoff, 3));
-    }
-    return assets;
-  }, [rawThemeAssets, executedTaskIds]);
+    let result = [...rawAssets];
+    executedTaskIds.forEach((taskId) => {
+      const task = ANALYST_TASKS.find((t) => t.id === taskId);
+      if (task) result = task.filterFn(result);
+    });
+    return result;
+  }, [rawAssets, executedTaskIds]);
 
-  // Add search term
-  const addTerm = (term: string) => {
-    if (!term.trim() || searchTerms.includes(term.trim())) return;
-    setSearchTerms([...searchTerms, term.trim()]);
-    setNewTerm("");
-    setExecutedTaskIds([]);
-    setTaskRemovedCounts({});
+  // Delta calculator for badge
+  const getFilterDelta = (taskId: string) => {
+    const task = ANALYST_TASKS.find((t) => t.id === taskId);
+    if (!task) return 0;
+    // Calculate what this task removes from the current pool
+    let pool = [...rawAssets];
+    executedTaskIds.filter((id) => id !== taskId).forEach((id) => {
+      const t = ANALYST_TASKS.find((x) => x.id === id);
+      if (t) pool = t.filterFn(pool);
+    });
+    const after = task.filterFn(pool);
+    return pool.length - after.length;
   };
 
-  const removeTerm = (term: string) => {
-    const updated = searchTerms.filter((t) => t !== term);
-    setSearchTerms(updated);
-    if (updated.length === 0) { setExecutedTaskIds([]); setTaskRemovedCounts({}); }
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (themeInput.trim()) {
+      setActiveTheme(themeInput.trim());
+      setExecutedTaskIds([]);
+    }
   };
 
-  // Execute a task
-  const executeTask = async (taskId: string) => {
+  const runTask = (taskId: string) => {
     setRunningTaskId(taskId);
-    await new Promise((r) => setTimeout(r, 1500));
-
-    const beforeCount = filteredAssets.length;
-    const newExecuted = [...executedTaskIds, taskId];
-    setExecutedTaskIds(newExecuted);
-
-    // Calculate removed count after state updates
     setTimeout(() => {
-      let tempAssets = [...rawThemeAssets];
-      if (newExecuted.includes("shariah")) tempAssets = tempAssets.filter((a) => a.screening === "approved");
-      if (newExecuted.includes("access")) tempAssets = tempAssets.filter((a) => a.ajBell === true);
-      if (newExecuted.includes("technical")) tempAssets = tempAssets.slice(0, Math.max(Math.ceil(tempAssets.length * 0.8), 3));
-      setTaskRemovedCounts((prev) => ({ ...prev, [taskId]: beforeCount - tempAssets.length }));
-    }, 50);
-
-    setRunningTaskId(null);
+      setExecutedTaskIds((prev) => [...prev, taskId]);
+      setRunningTaskId(null);
+    }, 1500);
   };
 
-  // Reset a task
   const resetTask = (taskId: string) => {
     setExecutedTaskIds((prev) => prev.filter((id) => id !== taskId));
-    setTaskRemovedCounts((prev) => { const n = { ...prev }; delete n[taskId]; return n; });
   };
 
   const handlePromote = (ticker: string, name: string) => {
@@ -114,162 +124,165 @@ export default function InvestmentLensPage() {
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Investment Lens</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Define themes. Run modular analyst tasks in any order. Promote survivors to Conviction List.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Input your thematic mandate. Deploy modular analytic checks to screen down the universe.</p>
       </div>
 
-      {/* Search Input */}
-      <div className="card">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Search Themes</h2>
-        <div className="flex gap-2">
-          <input value={newTerm} onChange={(e) => setNewTerm(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTerm(newTerm)}
-            placeholder="e.g. Semiconductors, Healthcare, Asia-Pacific..."
-            className="flex-1 rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark" />
-          <button onClick={() => addTerm(newTerm)} disabled={!newTerm.trim()} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">Search</button>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-1">
-          {[...REGIONS, ...SECTORS].map((t) => (
-            <button key={t} onClick={() => addTerm(t)} className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition ${searchTerms.includes(t) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"}`}>{t}</button>
-          ))}
-        </div>
-        {searchTerms.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {searchTerms.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-950/30 dark:text-brand-400">{t}<button onClick={() => removeTerm(t)} className="ml-1 hover:text-brand-900">×</button></span>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Theme Search */}
+      <form onSubmit={handleSearchSubmit} className="flex gap-3">
+        <input type="text" placeholder="Type a theme (e.g. Cybersecurity, Semiconductors, India Digital)..."
+          value={themeInput} onChange={(e) => setThemeInput(e.target.value)}
+          className="flex-1 rounded-lg border border-border bg-panel px-4 py-3 text-sm dark:border-border-dark dark:bg-panel-dark" />
+        <button type="submit" className="rounded-lg bg-brand-600 px-6 py-3 text-sm font-medium text-white hover:bg-brand-700">Initialize Theme</button>
+      </form>
 
-      {/* Pool Tracker */}
-      {rawThemeAssets.length > 0 && (
-        <div className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 text-sm dark:bg-slate-800/50">
-          <span>Raw Matches: <strong>{rawThemeAssets.length}</strong></span>
-          <span className="text-muted-foreground">→</span>
-          <span>Remaining: <strong className={filteredAssets.length < rawThemeAssets.length ? "text-emerald-600 dark:text-emerald-400" : ""}>{filteredAssets.length}</strong></span>
-          {executedTaskIds.length > 0 && <span className="ml-auto text-xs text-muted-foreground">{executedTaskIds.length}/{TASKS.length} tasks executed</span>}
-        </div>
-      )}
-
-      {/* Modular Task Cards */}
-      {rawThemeAssets.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {TASKS.map((task) => {
-            const isExecuted = executedTaskIds.includes(task.id);
-            const isRunning = runningTaskId === task.id;
-            const removed = taskRemovedCounts[task.id] || 0;
-            const isExpanded = expandedTask === task.id;
-
-            return (
-              <div key={task.id} className={`rounded-xl border p-5 transition ${
-                isExecuted ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20" :
-                isRunning ? "border-brand-300 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/20" :
-                "border-border bg-panel dark:border-border-dark dark:bg-panel-dark"
-              }`}>
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      isExecuted ? "bg-emerald-500 text-white" : isRunning ? "bg-brand-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
-                    }`}>
-                      {isExecuted ? "✓" : isRunning ? "⟳" : "○"}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold">{task.label}</p>
-                      <p className="text-[11px] text-muted-foreground">{task.description}</p>
-                    </div>
-                  </div>
-                  {isExecuted && removed > 0 && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950 dark:text-red-400">-{removed} filtered</span>
-                  )}
-                </div>
-
-                {/* Expandable explanation */}
-                <button onClick={() => setExpandedTask(isExpanded ? null : task.id)} className="mt-2 text-[10px] text-brand-600 hover:text-brand-800 dark:text-brand-400">
-                  {isExpanded ? "Hide explanation ▲" : "What is this? ▼"}
-                </button>
-                {isExpanded && (
-                  <p className="mt-2 rounded-lg bg-slate-100 p-3 text-xs text-muted-foreground dark:bg-slate-800/50">{task.explanation}</p>
-                )}
-
-                {/* Action */}
-                <div className="mt-4">
-                  {isRunning && (
-                    <div className="flex items-center gap-2 text-xs text-brand-700 dark:text-brand-400">
-                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
-                      {task.loadingText}
-                    </div>
-                  )}
-                  {!isExecuted && !isRunning && (
-                    <button onClick={() => executeTask(task.id)} className="rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700">
-                      Run Analysis
-                    </button>
-                  )}
-                  {isExecuted && (
-                    <button onClick={() => resetTask(task.id)} className="text-[10px] text-muted-foreground hover:text-red-600">
-                      Reset Task
-                    </button>
-                  )}
-                </div>
+      {activeTheme && (
+        <>
+          {/* Pool Tracker */}
+          <div className="card flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span className="text-[10px] uppercase text-muted-foreground">Active Mandate</span>
+              <p className="text-lg font-bold text-brand-600">{activeTheme}</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <span className="text-[10px] uppercase text-muted-foreground">Raw Matches</span>
+                <p className="text-xl font-bold">{rawAssets.length}</p>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <span className="text-muted-foreground">→</span>
+              <div className="text-center">
+                <span className="text-[10px] uppercase text-muted-foreground">Active Filters</span>
+                <p className="text-xl font-bold text-brand-600">{executedTaskIds.length} / {ANALYST_TASKS.length}</p>
+              </div>
+              <span className="text-muted-foreground">→</span>
+              <div className="text-center rounded-lg border border-border px-4 py-2 dark:border-border-dark">
+                <span className="text-[10px] uppercase text-muted-foreground">Surviving Pool</span>
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{filteredAssets.length}</p>
+              </div>
+            </div>
+          </div>
 
-      {/* Promote message */}
-      {promoteMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 fade-in dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">{promoteMessage}</div>
-      )}
+          {/* Modular Task Cards */}
+          <div>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Modular Analyst Pipeline</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {ANALYST_TASKS.map((task) => {
+                const isExecuted = executedTaskIds.includes(task.id);
+                const isRunning = runningTaskId === task.id;
+                const isExpanded = expandedTaskId === task.id;
+                const delta = isExecuted ? getFilterDelta(task.id) : 0;
 
-      {/* Asset Results */}
-      {filteredAssets.length > 0 && (
-        <div className="card">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {executedTaskIds.length === TASKS.length ? `Conviction Candidates (${filteredAssets.length})` : `Assets Surviving Filters (${filteredAssets.length})`}
-          </h2>
-          <div className="space-y-2">
-            {filteredAssets.map((asset) => {
-              const inConviction = CONVICTION_LIST_TICKERS.has(asset.ticker);
-              return (
-                <div key={asset.ticker} className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition hover:-translate-y-0.5 hover:shadow-elevated dark:border-border-dark/50 ${inConviction ? "opacity-50" : ""}`}>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-bold">{asset.ticker}</span>
-                      <span className="text-sm">{asset.name}</span>
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800">{asset.type}</span>
-                      {inConviction && (
-                        <Link href="/research" className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:underline dark:bg-emerald-950 dark:text-emerald-400">
-                          On Conviction List →
-                        </Link>
+                return (
+                  <div key={task.id} className={`card flex flex-col justify-between transition ${
+                    isExecuted ? "border-emerald-200 dark:border-emerald-900" :
+                    isRunning ? "border-brand-300 dark:border-brand-800" : ""
+                  }`}>
+                    <div>
+                      <div className="mb-2 flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          {isExecuted ? <span className="text-lg text-emerald-500">✓</span> :
+                           isRunning ? <span className="animate-spin text-lg text-brand-600">⟳</span> :
+                           <span className="text-lg text-muted-foreground">○</span>}
+                          <h3 className="text-sm font-semibold">{task.title}</h3>
+                        </div>
+                        {isExecuted && delta > 0 && (
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950 dark:text-red-400">-{delta} filtered</span>
+                        )}
+                      </div>
+                      <p className="mb-3 text-xs text-muted-foreground">{task.shortDesc}</p>
+                      <button type="button" onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                        className="mb-3 text-[10px] text-brand-600 hover:text-brand-800 dark:text-brand-400">
+                        {isExpanded ? "▼ Hide explanation" : "▶ What is this analysis?"}
+                      </button>
+                      {isExpanded && (
+                        <p className="mb-3 rounded-lg bg-slate-50 p-3 text-xs text-muted-foreground dark:bg-slate-800/50">{task.explanation}</p>
                       )}
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {asset.tags.slice(0, 4).map((tag) => (
-                        <span key={tag} className={`rounded-full px-1.5 py-0.5 text-[9px] ${searchTerms.some((t) => tag.toLowerCase().includes(t.toLowerCase())) ? "bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50"}`}>{tag}</span>
-                      ))}
+                    <div className="flex justify-end gap-2 border-t border-border pt-3 dark:border-border-dark">
+                      {isExecuted ? (
+                        <button onClick={() => resetTask(task.id)} className="text-xs text-muted-foreground hover:text-red-600">Reset Task</button>
+                      ) : (
+                        <button onClick={() => runTask(task.id)} disabled={runningTaskId !== null}
+                          className="rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
+                          {isRunning ? "Kiro analyzing..." : "Run Analysis"}
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">{asset.region}</span>
-                  {!inConviction && (
-                    <button onClick={() => handlePromote(asset.ticker, asset.name)}
-                      className="shrink-0 rounded-lg border border-brand-300 px-3 py-1.5 text-[10px] font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-400 dark:hover:bg-brand-950/30">
-                      + Conviction List
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+          {/* Pipeline Complete Banner */}
+          {executedTaskIds.length === ANALYST_TASKS.length && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+              🎉 Pipeline complete! Your asset options have been fully analyzed and audited.
+            </div>
+          )}
+
+          {/* Promote message */}
+          {promoteMessage && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 fade-in dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">{promoteMessage}</div>
+          )}
+
+          {/* Asset Grid */}
+          <div>
+            <div className="mb-4 flex items-center justify-between border-b border-border pb-2 dark:border-border-dark">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Surviving Assets ({filteredAssets.length})</h2>
+              <span className="text-[10px] text-muted-foreground font-mono">Derived from {activeTheme} database query</span>
+            </div>
+            {filteredAssets.length === 0 ? (
+              <div className="card py-12 text-center text-muted-foreground">
+                No assets survived the currently running cumulative filters. Try resetting a task to widen your pool.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredAssets.map((asset) => {
+                  const isOnConviction = CONVICTION_LIST_TICKERS.has(asset.ticker);
+                  return (
+                    <div key={asset.ticker} className={`card flex flex-col justify-between transition hover:-translate-y-0.5 hover:shadow-elevated ${isOnConviction ? "opacity-60" : ""}`}>
+                      <div>
+                        <div className="mb-2 flex items-start justify-between">
+                          <div>
+                            <span className="font-mono text-xs font-bold text-brand-600">{asset.ticker}</span>
+                            <h4 className="mt-1 text-sm font-semibold">{asset.name}</h4>
+                          </div>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{asset.type}</span>
+                        </div>
+                        <div className="mb-3 flex flex-wrap gap-1">
+                          {asset.tags.slice(0, 4).map((tag) => (
+                            <span key={tag} className="rounded-full bg-slate-50 px-1.5 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800/50">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between border-t border-border pt-3 dark:border-border-dark">
+                        <span className="text-[10px] uppercase text-muted-foreground">{asset.region}</span>
+                        {isOnConviction ? (
+                          <Link href="/research" className="text-[10px] text-muted-foreground hover:text-brand-600">On Conviction List →</Link>
+                        ) : (
+                          <button onClick={() => handlePromote(asset.ticker, asset.name)}
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[10px] font-medium text-white transition hover:bg-emerald-700">
+                            + Conviction List
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Empty state */}
-      {searchTerms.length === 0 && (
+      {!activeTheme && (
         <div className="card py-12 text-center">
           <p className="text-lg font-medium text-muted-foreground">Enter a theme to start the analyst pipeline</p>
-          <p className="mt-2 text-xs text-muted-foreground">Try: Semiconductors, Healthcare, Asia-Pacific, Clean Energy, Cybersecurity</p>
+          <p className="mt-2 text-xs text-muted-foreground">Try: Semiconductors, Healthcare, Asia-Pacific, Cybersecurity, India Digital</p>
         </div>
       )}
 
