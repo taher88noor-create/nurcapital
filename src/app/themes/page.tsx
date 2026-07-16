@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ASSET_UNIVERSE, searchUniverse } from "@/data/asset-universe";
+import { useState, useEffect, useMemo } from "react";
+import { searchUniverse } from "@/data/asset-universe";
 import type { UniverseAsset } from "@/data/asset-universe";
+import Link from "next/link";
 
 // Tickers already on Conviction List
 const CONVICTION_LIST_TICKERS = new Set([
@@ -12,317 +13,246 @@ const CONVICTION_LIST_TICKERS = new Set([
   "ISDE.L", "ISWD.L", "HTWD.L", "SEMI.L", "SMH.L", "INRG.L", "RENW.L", "HEAL.L", "VFEM.L",
 ]);
 
-// Hardcoded categories
-const REGIONS = ["Global", "MENA", "Asia-Pacific", "Europe", "North America", "Latin America", "Africa"];
-const SECTORS = ["Technology", "Healthcare", "Energy", "Industrials", "Consumer", "Financials", "Materials"];
+const REGIONS = ["Global", "MENA", "Asia-Pacific", "Europe", "North America", "Latin America"];
+const SECTORS = ["Technology", "Healthcare", "Energy", "Industrials", "Consumer", "Financials"];
 
-// Pipeline step definition
-interface PipelineStep {
+// Task definitions
+interface TaskDef {
   id: string;
   label: string;
   description: string;
-  isExecuted: boolean;
-  active: boolean;
-  assetsRemoved: number;
+  explanation: string;
+  loadingText: string;
 }
 
-const INITIAL_STEPS: PipelineStep[] = [
-  { id: "discovery", label: "Theme Discovery", description: "Scanning global indices for keyword matches", isExecuted: false, active: true, assetsRemoved: 0 },
-  { id: "screening", label: "Shariah Cleanse", description: "Excluding assets exposed to non-compliant sectors", isExecuted: false, active: false, assetsRemoved: 0 },
-  { id: "access", label: "Access & Liquidity Filter", description: "Checking availability on AJ Bell / local brokers", isExecuted: false, active: false, assetsRemoved: 0 },
-  { id: "technical", label: "Technical Momentum Scan", description: "Analyzing price vs MA50, MA200 & RSI trends", isExecuted: false, active: false, assetsRemoved: 0 },
-  { id: "output", label: "Generate Conviction Ranking", description: "Applying portfolio engine weightings and Buy/Hold signals", isExecuted: false, active: false, assetsRemoved: 0 },
+const TASKS: TaskDef[] = [
+  { id: "shariah", label: "Shariah Cleanse", description: "Ethical compliance filter", explanation: "Filters out companies tied to non-ethical sectors (interest-based finance, weapons, gambling, alcohol, Israel exposure) based on Shariah compliance rules.", loadingText: "Kiro screening compliance data..." },
+  { id: "access", label: "Access & Liquidity Filter", description: "AJ Bell availability check", explanation: "Keeps only companies with highly liquid ADRs or direct listings available to purchase on your retail brokerage (AJ Bell).", loadingText: "Kiro checking broker availability..." },
+  { id: "technical", label: "Technical Momentum Scan", description: "Price trend analysis", explanation: "Removes the bottom 20% of companies showing negative momentum (trading below their 200-day moving average or in sustained downtrend).", loadingText: "Kiro analyzing price momentum..." },
+  { id: "conviction", label: "Conviction Sizing & Valuation", description: "Portfolio engine grading", explanation: "Grades the remaining assets into clear BUY, HOLD, or WATCH tiers based on revenue stability, competitive position, and volatility.", loadingText: "Kiro running conviction engine..." },
 ];
 
 export default function InvestmentLensPage() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [newTerm, setNewTerm] = useState("");
-  const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
-  const [discoveredAssets, setDiscoveredAssets] = useState<UniverseAsset[]>([]);
-  const [filteredAssets, setFilteredAssets] = useState<UniverseAsset[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [pipelineComplete, setPipelineComplete] = useState(false);
+  const [executedTaskIds, setExecutedTaskIds] = useState<string[]>([]);
+  const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
+  const [taskRemovedCounts, setTaskRemovedCounts] = useState<Record<string, number>>({});
   const [promoteMessage, setPromoteMessage] = useState<string | null>(null);
+  const [expandedTask, setExpandedTask] = useState<string | null>(null);
 
-  // Custom tags from localStorage
-  const [customTags, setCustomTags] = useState<string[]>([]);
-  useEffect(() => {
-    const saved = localStorage.getItem("nc_custom_tags");
-    if (saved) setCustomTags(JSON.parse(saved));
-  }, []);
+  // Raw theme search results (source of truth)
+  const rawThemeAssets = useMemo(() => {
+    if (searchTerms.length === 0) return [];
+    return searchUniverse(searchTerms);
+  }, [searchTerms]);
 
-  const saveCustomTags = (tags: string[]) => {
-    setCustomTags(tags);
-    localStorage.setItem("nc_custom_tags", JSON.stringify(tags));
-  };
+  // Dynamically filter based on executed tasks (order-independent)
+  const filteredAssets = useMemo(() => {
+    let assets = [...rawThemeAssets];
+    if (executedTaskIds.includes("shariah")) {
+      assets = assets.filter((a) => a.screening === "approved");
+    }
+    if (executedTaskIds.includes("access")) {
+      assets = assets.filter((a) => a.ajBell === true);
+    }
+    if (executedTaskIds.includes("technical")) {
+      const cutoff = Math.ceil(assets.length * 0.8);
+      assets = assets.slice(0, Math.max(cutoff, 3));
+    }
+    return assets;
+  }, [rawThemeAssets, executedTaskIds]);
 
-  // Add a search term and auto-run discovery
+  // Add search term
   const addTerm = (term: string) => {
-    if (!term.trim()) return;
-    const updated = [...searchTerms, term.trim()];
-    setSearchTerms(updated);
+    if (!term.trim() || searchTerms.includes(term.trim())) return;
+    setSearchTerms([...searchTerms, term.trim()]);
     setNewTerm("");
-    if (!customTags.includes(term.trim())) saveCustomTags([...customTags, term.trim()]);
-    runDiscovery(updated);
+    setExecutedTaskIds([]);
+    setTaskRemovedCounts({});
   };
 
   const removeTerm = (term: string) => {
     const updated = searchTerms.filter((t) => t !== term);
     setSearchTerms(updated);
-    if (updated.length > 0) runDiscovery(updated);
-    else resetPipeline();
+    if (updated.length === 0) { setExecutedTaskIds([]); setTaskRemovedCounts({}); }
   };
 
-  // Step 1: Discovery — runs automatically when terms change
-  const runDiscovery = (terms: string[]) => {
-    const results = searchUniverse(terms);
-    setDiscoveredAssets(results);
-    setFilteredAssets(results);
-    setPipelineComplete(false);
-    setPipelineSteps((prev) => prev.map((s, i) =>
-      i === 0 ? { ...s, isExecuted: true, active: false, assetsRemoved: ASSET_UNIVERSE.length - results.length }
-      : i === 1 ? { ...s, active: true, isExecuted: false, assetsRemoved: 0 }
-      : { ...s, active: false, isExecuted: false, assetsRemoved: 0 }
-    ));
+  // Execute a task
+  const executeTask = async (taskId: string) => {
+    setRunningTaskId(taskId);
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const beforeCount = filteredAssets.length;
+    const newExecuted = [...executedTaskIds, taskId];
+    setExecutedTaskIds(newExecuted);
+
+    // Calculate removed count after state updates
+    setTimeout(() => {
+      let tempAssets = [...rawThemeAssets];
+      if (newExecuted.includes("shariah")) tempAssets = tempAssets.filter((a) => a.screening === "approved");
+      if (newExecuted.includes("access")) tempAssets = tempAssets.filter((a) => a.ajBell === true);
+      if (newExecuted.includes("technical")) tempAssets = tempAssets.slice(0, Math.max(Math.ceil(tempAssets.length * 0.8), 3));
+      setTaskRemovedCounts((prev) => ({ ...prev, [taskId]: beforeCount - tempAssets.length }));
+    }, 50);
+
+    setRunningTaskId(null);
   };
 
-  const resetPipeline = () => {
-    setPipelineSteps(INITIAL_STEPS);
-    setDiscoveredAssets([]);
-    setFilteredAssets([]);
-    setPipelineComplete(false);
-  };
-
-  // Execute the next active step
-  const executeStep = async (stepId: string) => {
-    setIsRunning(true);
-
-    // Simulate analyst processing time
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    let currentAssets = [...filteredAssets];
-    let removed = 0;
-
-    switch (stepId) {
-      case "screening": {
-        const before = currentAssets.length;
-        currentAssets = currentAssets.filter((a) => a.screening === "approved");
-        removed = before - currentAssets.length;
-        break;
-      }
-      case "access": {
-        const before = currentAssets.length;
-        currentAssets = currentAssets.filter((a) => a.ajBell === true);
-        removed = before - currentAssets.length;
-        break;
-      }
-      case "technical": {
-        // Simulate technical filter — remove bottom 20% by fuzzy score
-        const before = currentAssets.length;
-        const cutoff = Math.floor(currentAssets.length * 0.8);
-        currentAssets = currentAssets.slice(0, Math.max(cutoff, 3));
-        removed = before - currentAssets.length;
-        break;
-      }
-      case "output": {
-        // Final step — just mark complete, assets already filtered
-        removed = 0;
-        setPipelineComplete(true);
-        break;
-      }
-    }
-
-    setFilteredAssets(currentAssets);
-
-    // Update pipeline state
-    setPipelineSteps((prev) => {
-      const stepIndex = prev.findIndex((s) => s.id === stepId);
-      return prev.map((s, i) => {
-        if (i === stepIndex) return { ...s, isExecuted: true, active: false, assetsRemoved: removed };
-        if (i === stepIndex + 1) return { ...s, active: true };
-        return s;
-      });
-    });
-
-    setIsRunning(false);
+  // Reset a task
+  const resetTask = (taskId: string) => {
+    setExecutedTaskIds((prev) => prev.filter((id) => id !== taskId));
+    setTaskRemovedCounts((prev) => { const n = { ...prev }; delete n[taskId]; return n; });
   };
 
   const handlePromote = (ticker: string, name: string) => {
     const existing = JSON.parse(localStorage.getItem("nc_promoted") || "[]");
-    if (!existing.includes(ticker)) {
-      existing.push(ticker);
-      localStorage.setItem("nc_promoted", JSON.stringify(existing));
-    }
+    if (!existing.includes(ticker)) { existing.push(ticker); localStorage.setItem("nc_promoted", JSON.stringify(existing)); }
     setPromoteMessage(`✓ ${ticker} (${name}) added to Conviction List request.`);
     setTimeout(() => setPromoteMessage(null), 3000);
   };
 
-  const activeStep = pipelineSteps.find((s) => s.active && !s.isExecuted);
-  const ratingColors: Record<string, string> = { BUY: "badge-green", HOLD: "badge-blue", REDUCE: "badge-amber" };
-
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Investment Lens</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Define what you want to invest in. The analyst runs a step-by-step pipeline to find the best matches.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Define themes. Run modular analyst tasks in any order. Promote survivors to Conviction List.</p>
       </div>
 
-      {/* Theme Input */}
+      {/* Search Input */}
       <div className="card">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Your Search Themes</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Search Themes</h2>
         <div className="flex gap-2">
-          <input value={newTerm} onChange={(e) => setNewTerm(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addTerm(newTerm)}
-            placeholder="e.g. Semiconductors, Asia-Pacific, Healthcare, Aviation..."
+          <input value={newTerm} onChange={(e) => setNewTerm(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTerm(newTerm)}
+            placeholder="e.g. Semiconductors, Healthcare, Asia-Pacific..."
             className="flex-1 rounded-lg border border-border bg-panel px-3 py-2 text-sm dark:border-border-dark dark:bg-panel-dark" />
-          <button onClick={() => addTerm(newTerm)} disabled={!newTerm.trim()}
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
-            Search
-          </button>
+          <button onClick={() => addTerm(newTerm)} disabled={!newTerm.trim()} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">Search</button>
         </div>
-
-        {/* Quick filters */}
         <div className="mt-3 flex flex-wrap gap-1">
-          {REGIONS.map((r) => (
-            <button key={r} onClick={() => addTerm(r)}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition ${searchTerms.includes(r) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"}`}>
-              {r}
-            </button>
-          ))}
-          {SECTORS.map((s) => (
-            <button key={s} onClick={() => addTerm(s)}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition ${searchTerms.includes(s) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"}`}>
-              {s}
-            </button>
+          {[...REGIONS, ...SECTORS].map((t) => (
+            <button key={t} onClick={() => addTerm(t)} className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition ${searchTerms.includes(t) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"}`}>{t}</button>
           ))}
         </div>
-
-        {/* Active terms */}
         {searchTerms.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {searchTerms.map((term) => (
-              <span key={term} className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-950/30 dark:text-brand-400">
-                {term}
-                <button onClick={() => removeTerm(term)} className="ml-1 text-brand-500 hover:text-brand-700">×</button>
-              </span>
+            {searchTerms.map((t) => (
+              <span key={t} className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-950/30 dark:text-brand-400">{t}<button onClick={() => removeTerm(t)} className="ml-1 hover:text-brand-900">×</button></span>
             ))}
-            <button onClick={resetPipeline} className="text-[10px] text-red-500 hover:text-red-700">Clear all</button>
           </div>
         )}
       </div>
 
-      {/* Interactive Analyst Pipeline */}
-      {searchTerms.length > 0 && (
-        <div className="card">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Analyst Pipeline</h2>
-          <div className="space-y-3">
-            {pipelineSteps.map((step, i) => (
-              <div key={step.id} className={`rounded-lg border p-4 transition ${
-                step.isExecuted ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20" :
-                step.active ? "border-brand-300 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/20" :
-                "border-border/50 opacity-40 dark:border-border-dark/50"
+      {/* Pool Tracker */}
+      {rawThemeAssets.length > 0 && (
+        <div className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3 text-sm dark:bg-slate-800/50">
+          <span>Raw Matches: <strong>{rawThemeAssets.length}</strong></span>
+          <span className="text-muted-foreground">→</span>
+          <span>Remaining: <strong className={filteredAssets.length < rawThemeAssets.length ? "text-emerald-600 dark:text-emerald-400" : ""}>{filteredAssets.length}</strong></span>
+          {executedTaskIds.length > 0 && <span className="ml-auto text-xs text-muted-foreground">{executedTaskIds.length}/{TASKS.length} tasks executed</span>}
+        </div>
+      )}
+
+      {/* Modular Task Cards */}
+      {rawThemeAssets.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {TASKS.map((task) => {
+            const isExecuted = executedTaskIds.includes(task.id);
+            const isRunning = runningTaskId === task.id;
+            const removed = taskRemovedCounts[task.id] || 0;
+            const isExpanded = expandedTask === task.id;
+
+            return (
+              <div key={task.id} className={`rounded-xl border p-5 transition ${
+                isExecuted ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20" :
+                isRunning ? "border-brand-300 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/20" :
+                "border-border bg-panel dark:border-border-dark dark:bg-panel-dark"
               }`}>
-                <div className="flex items-center gap-3">
-                  {/* Step indicator */}
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    step.isExecuted ? "bg-emerald-500 text-white" :
-                    step.active ? "bg-brand-600 text-white" :
-                    "bg-slate-200 text-slate-500 dark:bg-slate-700"
-                  }`}>
-                    {step.isExecuted ? "✓" : i + 1}
-                  </span>
-
-                  {/* Step info */}
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">{step.label}</p>
-                    <p className="text-[11px] text-muted-foreground">{step.description}</p>
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      isExecuted ? "bg-emerald-500 text-white" : isRunning ? "bg-brand-600 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                    }`}>
+                      {isExecuted ? "✓" : isRunning ? "⟳" : "○"}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">{task.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{task.description}</p>
+                    </div>
                   </div>
+                  {isExecuted && removed > 0 && (
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-950 dark:text-red-400">-{removed} filtered</span>
+                  )}
+                </div>
 
-                  {/* Status / Action */}
-                  {step.isExecuted && (
-                    <div className="text-right">
-                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Complete</span>
-                      {step.assetsRemoved > 0 && (
-                        <p className="text-[10px] text-muted-foreground">-{step.assetsRemoved} assets filtered</p>
-                      )}
+                {/* Expandable explanation */}
+                <button onClick={() => setExpandedTask(isExpanded ? null : task.id)} className="mt-2 text-[10px] text-brand-600 hover:text-brand-800 dark:text-brand-400">
+                  {isExpanded ? "Hide explanation ▲" : "What is this? ▼"}
+                </button>
+                {isExpanded && (
+                  <p className="mt-2 rounded-lg bg-slate-100 p-3 text-xs text-muted-foreground dark:bg-slate-800/50">{task.explanation}</p>
+                )}
+
+                {/* Action */}
+                <div className="mt-4">
+                  {isRunning && (
+                    <div className="flex items-center gap-2 text-xs text-brand-700 dark:text-brand-400">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
+                      {task.loadingText}
                     </div>
                   )}
-                  {step.active && !step.isExecuted && (
-                    <button
-                      onClick={() => executeStep(step.id)}
-                      disabled={isRunning}
-                      className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
-                    >
-                      {isRunning ? (
-                        <span className="flex items-center gap-2">
-                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Analysing...
-                        </span>
-                      ) : (
-                        `Run ${step.label}`
-                      )}
+                  {!isExecuted && !isRunning && (
+                    <button onClick={() => executeTask(task.id)} className="rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700">
+                      Run Analysis
+                    </button>
+                  )}
+                  {isExecuted && (
+                    <button onClick={() => resetTask(task.id)} className="text-[10px] text-muted-foreground hover:text-red-600">
+                      Reset Task
                     </button>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Pipeline summary */}
-          {discoveredAssets.length > 0 && (
-            <div className="mt-4 flex items-center gap-4 rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800/50">
-              <span>Started: <strong>{discoveredAssets.length}</strong> assets</span>
-              <span>→</span>
-              <span>Remaining: <strong>{filteredAssets.length}</strong> assets</span>
-              {pipelineComplete && <span className="ml-auto font-medium text-emerald-600 dark:text-emerald-400">✓ Pipeline complete</span>}
-            </div>
-          )}
+            );
+          })}
         </div>
       )}
 
       {/* Promote message */}
       {promoteMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 fade-in dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
-          {promoteMessage}
-        </div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 fade-in dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">{promoteMessage}</div>
       )}
 
       {/* Asset Results */}
       {filteredAssets.length > 0 && (
         <div className="card">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {pipelineComplete ? `Conviction Candidates (${filteredAssets.length})` : `Assets in Pipeline (${filteredAssets.length})`}
-            </h2>
-          </div>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            {executedTaskIds.length === TASKS.length ? `Conviction Candidates (${filteredAssets.length})` : `Assets Surviving Filters (${filteredAssets.length})`}
+          </h2>
           <div className="space-y-2">
             {filteredAssets.map((asset) => {
               const inConviction = CONVICTION_LIST_TICKERS.has(asset.ticker);
               return (
                 <div key={asset.ticker} className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition hover:-translate-y-0.5 hover:shadow-elevated dark:border-border-dark/50 ${inConviction ? "opacity-50" : ""}`}>
-                  <span className={`badge ${asset.screening === "approved" ? "badge-green" : asset.screening === "watchlist" ? "badge-amber" : "badge-red"}`}>
-                    {asset.screening === "approved" ? "✓" : asset.screening === "watchlist" ? "?" : "✗"}
-                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-bold">{asset.ticker}</span>
                       <span className="text-sm">{asset.name}</span>
                       <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800">{asset.type}</span>
-                      {inConviction && <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">On Conviction List</span>}
+                      {inConviction && (
+                        <Link href="/research" className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 hover:underline dark:bg-emerald-950 dark:text-emerald-400">
+                          On Conviction List →
+                        </Link>
+                      )}
                     </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {asset.tags.slice(0, 4).map((tag) => (
-                        <span key={tag} className={`rounded-full px-1.5 py-0.5 text-[9px] ${searchTerms.some((t) => tag.toLowerCase().includes(t.toLowerCase())) ? "bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50"}`}>
-                          {tag}
-                        </span>
+                        <span key={tag} className={`rounded-full px-1.5 py-0.5 text-[9px] ${searchTerms.some((t) => tag.toLowerCase().includes(t.toLowerCase())) ? "bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400" : "bg-slate-50 text-slate-500 dark:bg-slate-800/50"}`}>{tag}</span>
                       ))}
                     </div>
                   </div>
                   <span className="text-[10px] text-muted-foreground">{asset.region}</span>
-                  {pipelineComplete && !inConviction && (
+                  {!inConviction && (
                     <button onClick={() => handlePromote(asset.ticker, asset.name)}
                       className="shrink-0 rounded-lg border border-brand-300 px-3 py-1.5 text-[10px] font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-400 dark:hover:bg-brand-950/30">
                       + Conviction List
@@ -337,15 +267,14 @@ export default function InvestmentLensPage() {
 
       {/* Empty state */}
       {searchTerms.length === 0 && (
-        <div className="card text-center py-12">
+        <div className="card py-12 text-center">
           <p className="text-lg font-medium text-muted-foreground">Enter a theme to start the analyst pipeline</p>
-          <p className="mt-2 text-xs text-muted-foreground">Try: Semiconductors, Healthcare, Asia-Pacific, Clean Energy</p>
+          <p className="mt-2 text-xs text-muted-foreground">Try: Semiconductors, Healthcare, Asia-Pacific, Clean Energy, Cybersecurity</p>
         </div>
       )}
 
-      {/* Footer */}
       <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground dark:border-border-dark">
-        The analyst scans NYSE · NASDAQ · LSE · Euronext · Asia-Pacific (via ETFs/ADRs) · Latin America (via ADRs)
+        Analyst scans NYSE · NASDAQ · LSE · Euronext · Asia-Pacific · Latin America. Run tasks in any order.
       </div>
     </div>
   );
