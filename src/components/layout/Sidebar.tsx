@@ -7,7 +7,6 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: "◎" },
   { name: "Conviction List", href: "/research", icon: "◆" },
   { name: "Investment Lens", href: "/themes", icon: "◐" },
-  { name: "Research Notes", href: "/notes", icon: "◉" },
 ];
 
 export function Sidebar() {
