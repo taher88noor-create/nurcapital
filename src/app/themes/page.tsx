@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from "react";
 
+// Tickers already on Conviction List (from research page signals)
+const CONVICTION_LIST_TICKERS = new Set([
+  "TSM", "ASML", "LLY", "CRWD", "AMD", "AVGO", "PANW", "ABB", "NVO", "ENPH",
+  "INFY", "NU", "SE", "CPNG", "GLOB", "MMYT", "VALE", "PBR", "AMX", "FMX",
+  "RDY", "UMC", "PKX", "TTM",
+  "ISDE.L", "ISWD.L", "HTWD.L", "SEMI.L", "SMH.L", "INRG.L", "RENW.L", "HEAL.L", "VFEM.L",
+]);
+
 // ── Hardcoded Categories ─────────────────────────────────────────────────────
 
 const REGIONS = ["Global", "MENA", "Asia-Pacific", "Europe", "North America", "Latin America", "Africa"];
@@ -279,14 +287,17 @@ export default function ThemesPage() {
         </div>
 
         <div className="space-y-2">
-          {rankedAssets.slice(0, 30).map((asset) => (
-            <div key={asset.ticker + asset.companyName} className="flex items-center gap-3 rounded-lg border border-border/50 p-3 transition hover:-translate-y-0.5 hover:shadow-elevated dark:border-border-dark/50">
+          {rankedAssets.slice(0, 30).map((asset) => {
+            const inConviction = CONVICTION_LIST_TICKERS.has(asset.ticker);
+            return (
+            <div key={asset.ticker + asset.companyName} className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition hover:-translate-y-0.5 hover:shadow-elevated dark:border-border-dark/50 ${inConviction ? "opacity-50" : ""}`}>
               <span className={`badge ${ratingColors[asset.rating]}`}>{asset.rating}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-sm font-bold">{asset.ticker}</span>
                   <span className="text-sm">{asset.companyName}</span>
                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800">{asset.assetType}</span>
+                  {inConviction && <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">On Conviction List</span>}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {asset.tags.slice(0, 5).map((tag) => (
@@ -299,14 +310,17 @@ export default function ThemesPage() {
               {"score" in asset && (
                 <span className="text-xs font-medium text-muted-foreground">{(asset as any).score}pts</span>
               )}
-              <button
-                onClick={() => handlePromote(asset.ticker, asset.companyName)}
-                className="shrink-0 rounded-lg border border-brand-300 px-3 py-1.5 text-[10px] font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-400 dark:hover:bg-brand-950/30"
-              >
-                + Conviction List
-              </button>
+              {!inConviction && (
+                <button
+                  onClick={() => handlePromote(asset.ticker, asset.companyName)}
+                  className="shrink-0 rounded-lg border border-brand-300 px-3 py-1.5 text-[10px] font-medium text-brand-700 transition hover:bg-brand-50 dark:border-brand-700 dark:text-brand-400 dark:hover:bg-brand-950/30"
+                >
+                  + Conviction List
+                </button>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
