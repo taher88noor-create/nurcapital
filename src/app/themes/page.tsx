@@ -294,7 +294,14 @@ export default function InvestmentLensPage() {
       </div>
 
       {/* Asset Detail Drawer */}
-      {selectedAsset && <AssetDrawer asset={selectedAsset} onClose={() => setSelectedAsset(null)} />}
+      {selectedAsset && (
+        <AssetDrawer
+          asset={selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          trackedTickers={[...CONVICTION_LIST_TICKERS]}
+          onPromote={handlePromote}
+        />
+      )}
     </div>
   );
 }
