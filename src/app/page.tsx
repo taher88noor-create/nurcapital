@@ -1,161 +1,206 @@
 "use client";
 
+import { useMemo } from "react";
+import {
+  calculateDrawdown,
+  generateHealthCheck,
+  generateMockMarketData,
+  type DrawdownResult,
+  type HealthCheck,
+} from "@/lib/drawdown-engine";
+
+// Conviction List signal prices (read-only reference)
+const CONVICTION_SIGNALS: { ticker: string; name: string; signalPrice: number; theme: string }[] = [
+  { ticker: "TSM", name: "Taiwan Semiconductor", signalPrice: 165.20, theme: "Semiconductors" },
+  { ticker: "ASML", name: "ASML Holding", signalPrice: 878.50, theme: "Semiconductors" },
+  { ticker: "LLY", name: "Eli Lilly", signalPrice: 1085.00, theme: "Healthcare" },
+  { ticker: "CRWD", name: "CrowdStrike", signalPrice: 422.50, theme: "Cybersecurity" },
+  { ticker: "AMD", name: "Advanced Micro Devices", signalPrice: 155.40, theme: "Semiconductors" },
+  { ticker: "AVGO", name: "Broadcom", signalPrice: 230.50, theme: "Semiconductors" },
+  { ticker: "PANW", name: "Palo Alto Networks", signalPrice: 210.80, theme: "Cybersecurity" },
+  { ticker: "INFY", name: "Infosys", signalPrice: 19.80, theme: "AI Infrastructure" },
+  { ticker: "NU", name: "Nu Holdings", signalPrice: 14.20, theme: "Emerging Markets" },
+  { ticker: "SE", name: "Sea Limited", signalPrice: 138.50, theme: "Emerging Markets" },
+  { ticker: "CPNG", name: "Coupang", signalPrice: 26.40, theme: "Emerging Markets" },
+  { ticker: "GLOB", name: "Globant", signalPrice: 215.30, theme: "AI Infrastructure" },
+  { ticker: "MMYT", name: "MakeMyTrip", signalPrice: 108.40, theme: "Emerging Markets" },
+  { ticker: "NVO", name: "Novo Nordisk (ADR)", signalPrice: 95.80, theme: "Healthcare" },
+  { ticker: "ABB", name: "ABB Ltd", signalPrice: 56.20, theme: "Industrial Automation" },
+];
+
+interface AnomalyCard extends DrawdownResult {
+  theme: string;
+  health: HealthCheck;
+}
+
 export default function DashboardPage() {
+  // Calculate drawdowns for all conviction assets
+  const anomalies = useMemo<AnomalyCard[]>(() => {
+    const results: AnomalyCard[] = [];
+    for (const signal of CONVICTION_SIGNALS) {
+      const market = generateMockMarketData(signal.ticker, signal.signalPrice);
+      const { pctDrop, tier } = calculateDrawdown(market.currentPrice, market.high52w);
+
+      if (tier !== "none") {
+        results.push({
+          ticker: signal.ticker,
+          name: signal.name,
+          currentPrice: market.currentPrice,
+          high52w: market.high52w,
+          pctDrop,
+          tier,
+          daysSinceHigh: market.daysSinceHigh,
+          volumeSpikeRatio: market.volumeSpikeRatio,
+          theme: signal.theme,
+          health: generateHealthCheck(signal.ticker, pctDrop),
+        });
+      }
+    }
+    return results.sort((a, b) => b.pctDrop - a.pctDrop);
+  }, []);
+
+  const structural = anomalies.filter((a) => a.tier === "structural");
+  const tactical = anomalies.filter((a) => a.tier === "tactical");
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Intelligence Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Portfolio Command Centre</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          What does Nür Capital recommend today?
+          Real-time anomaly detection across your Conviction List. Identifying drawdown opportunities.
         </p>
       </div>
 
-      {/* Section 1 — Latest BUY Recommendations */}
-      <section className="card">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Latest BUY Recommendations
-        </h2>
-        <div className="space-y-3">
-          <Recommendation ticker="TSM" company="Taiwan Semiconductor" theme="Semiconductors" date="15 Mar 2025" price={165.20} />
-          <Recommendation ticker="ASML" company="ASML Holding" theme="Semiconductors" date="15 Mar 2025" price={878.50} />
-          <Recommendation ticker="LLY" company="Eli Lilly" theme="Healthcare" date="20 Feb 2025" price={730.00} />
-          <Recommendation ticker="CRWD" company="CrowdStrike" theme="Cybersecurity" date="01 Mar 2025" price={322.80} />
-          <Recommendation ticker="AMD" company="Advanced Micro Devices" theme="Semiconductors" date="01 Apr 2025" price={155.40} />
-          <Recommendation ticker="AVGO" company="Broadcom" theme="Semiconductors" date="01 Apr 2025" price={168.20} />
-          <Recommendation ticker="PANW" company="Palo Alto Networks" theme="Cybersecurity" date="15 Apr 2025" price={180.40} />
+      {/* Status Bar */}
+      <div className="flex items-center gap-4 rounded-xl border border-border bg-panel p-4 dark:border-border-dark dark:bg-panel-dark">
+        <div className="flex-1">
+          <span className="text-[10px] uppercase text-muted-foreground">Conviction Assets Monitored</span>
+          <p className="text-xl font-bold">{CONVICTION_SIGNALS.length}</p>
         </div>
-      </section>
-
-      {/* Section 2 — Recommendation Performance Summary */}
-      <section className="card">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Recommendation Performance Summary
-        </h2>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Total BUY Signals" value="7" />
-          <Stat label="Avg Return Since Signal" value="+6.3%" variant="green" />
-          <Stat label="Best Performing Signal" value="LLY +12.4%" variant="green" />
-          <Stat label="Best Performing Theme" value="Cybersecurity +6.5%" variant="green" />
+        <div className="flex-1 text-center">
+          <span className="text-[10px] uppercase text-muted-foreground">Active Anomalies</span>
+          <p className={`text-xl font-bold ${anomalies.length > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>{anomalies.length}</p>
         </div>
-        <p className="mt-4 text-[11px] text-muted-foreground">
-          Returns calculated from signal date to latest available price. View full breakdown on Recommendation Performance page.
-        </p>
-      </section>
-
-      {/* Section 3 — Theme Summary */}
-      <section className="card">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Theme Summary
-        </h2>
-        <div className="space-y-3">
-          <ThemeRow theme="Semiconductors" recommendations={4} avgReturn={5.97} status="STRONG" />
-          <ThemeRow theme="Cybersecurity" recommendations={2} avgReturn={6.46} status="STRONG" />
-          <ThemeRow theme="Healthcare" recommendations={2} avgReturn={3.09} status="NEUTRAL" />
-          <ThemeRow theme="Halal Finance" recommendations={1} avgReturn={3.44} status="NEUTRAL" />
-          <ThemeRow theme="Oil & Gas" recommendations={1} avgReturn={2.87} status="NEUTRAL" />
-          <ThemeRow theme="Industrial Automation" recommendations={1} avgReturn={4.35} status="NEUTRAL" />
+        <div className="flex-1 text-right">
+          <span className="text-[10px] uppercase text-muted-foreground">Structural Discounts</span>
+          <p className={`text-xl font-bold ${structural.length > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>{structural.length}</p>
         </div>
-      </section>
+      </div>
 
-      {/* Section 4 — Screening Summary */}
-      <section className="card">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Screening Principles
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <PrincipleCard icon="🎰" label="No Gambling" />
-          <PrincipleCard icon="🍺" label="No Alcohol" />
-          <PrincipleCard icon="⚔️" label="No Weapons" />
-          <PrincipleCard icon="🏦" label="No Interest-Based Finance" />
+      {/* No Anomalies State */}
+      {anomalies.length === 0 && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center dark:border-emerald-900 dark:bg-emerald-950/20">
+          <p className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">No systemic portfolio discounts detected.</p>
+          <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-500">Risk parameters normal. All conviction assets trading within expected ranges.</p>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Only assets that pass all ethical screening criteria receive BUY or HOLD recommendations.
-          Rejected assets never enter the recommendation system.
-        </p>
-      </section>
+      )}
 
-      {/* Section 5 — Latest Research Notes */}
-      <section className="card">
-        <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Latest Research Notes
-        </h2>
-        <div className="space-y-3">
-          <NotePreview date="25 May 2025" title="Market Regime Shift: Strong Bull → Weak Bull" theme="Market Regime" />
-          <NotePreview date="20 May 2025" title="NVIDIA Rejected — Israel Exposure Confirmed" theme="Screening" />
-          <NotePreview date="15 Apr 2025" title="Cybersecurity: Platform Consolidation Thesis" theme="Cybersecurity" />
-          <NotePreview date="01 Apr 2025" title="Semiconductor AI Demand: Structural, Not Cyclical" theme="Semiconductors" />
+      {/* Structural Discounts (20%+) */}
+      {structural.length > 0 && (
+        <div>
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span className="text-red-600 dark:text-red-400">Structural Discounts (20%+ drawdown)</span>
+          </h2>
+          <div className="space-y-4">
+            {structural.map((anomaly) => (
+              <AnomalyPanel key={anomaly.ticker} anomaly={anomaly} />
+            ))}
+          </div>
         </div>
-      </section>
+      )}
 
-      {/* Disclaimer */}
+      {/* Tactical Pullbacks (10-20%) */}
+      {tactical.length > 0 && (
+        <div>
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="text-amber-600 dark:text-amber-400">Tactical Pullbacks (10-20% drawdown)</span>
+          </h2>
+          <div className="space-y-4">
+            {tactical.map((anomaly) => (
+              <AnomalyPanel key={anomaly.ticker} anomaly={anomaly} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
       <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground dark:border-border-dark">
-        Past performance does not guarantee future results. Nür Capital provides research intelligence, not financial advice.
+        Drawdowns calculated against simulated 52-week highs. Connect live data for real-time anomaly detection. Not financial advice.
       </div>
     </div>
   );
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+// ── Anomaly Card Component ───────────────────────────────────────────────────
 
-function Recommendation({ ticker, company, theme, date, price }: { ticker: string; company: string; theme: string; date: string; price: number }) {
+function AnomalyPanel({ anomaly }: { anomaly: AnomalyCard }) {
+  const tierColor = anomaly.tier === "structural"
+    ? "border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20"
+    : "border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20";
+
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-border p-3 dark:border-border-dark">
-      <span className="badge badge-green">BUY</span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold">{ticker}</span>
-          <span className="text-sm">{company}</span>
+    <div className={`rounded-xl border p-5 ${tierColor}`}>
+      {/* Header */}
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm font-bold">{anomaly.ticker}</span>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{anomaly.theme}</span>
+          </div>
+          <p className="mt-1 text-sm font-medium">{anomaly.name}</p>
         </div>
-        <span className="text-[10px] text-muted-foreground">{theme}</span>
+        <div className="text-right">
+          <p className={`text-2xl font-extrabold ${anomaly.tier === "structural" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+            -{anomaly.pctDrop}%
+          </p>
+          <p className="text-[10px] text-muted-foreground">from 52w high</p>
+        </div>
       </div>
-      <div className="text-right">
-        <p className="text-sm font-mono font-medium">${price.toFixed(2)}</p>
-        <p className="text-[10px] text-muted-foreground">{date}</p>
+
+      {/* Metrics Row */}
+      <div className="mb-4 grid grid-cols-4 gap-3 rounded-lg bg-white/60 p-3 dark:bg-slate-900/40">
+        <div className="text-center">
+          <p className="text-[9px] uppercase text-muted-foreground">Current</p>
+          <p className="text-sm font-bold">${anomaly.currentPrice}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] uppercase text-muted-foreground">52W High</p>
+          <p className="text-sm font-bold">${anomaly.high52w}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] uppercase text-muted-foreground">Days Since High</p>
+          <p className="text-sm font-bold">{anomaly.daysSinceHigh}d</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] uppercase text-muted-foreground">Volume Spike</p>
+          <p className={`text-sm font-bold ${anomaly.volumeSpikeRatio > 1.5 ? "text-amber-600" : ""}`}>{anomaly.volumeSpikeRatio}x</p>
+        </div>
+      </div>
+
+      {/* Health Check */}
+      <div className="space-y-2">
+        <p className="text-[9px] font-semibold uppercase text-muted-foreground">Kiro Rapid-Audit Checklist</p>
+        <HealthCheckItem label="Moving Average Support" passed={anomaly.health.maSupport} note={anomaly.health.maSupportNote} />
+        <HealthCheckItem label="Shariah Capitalisation Guard" passed={anomaly.health.shariahGuard} note={anomaly.health.shariahGuardNote} />
+        <HealthCheckItem label="Underlying Moat Status" passed={anomaly.health.moatStatus} note={anomaly.health.moatStatusNote} />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, variant }: { label: string; value: string; variant?: "green" | "red" }) {
-  const color = variant === "green" ? "text-emerald-600 dark:text-emerald-400" : variant === "red" ? "text-red-600 dark:text-red-400" : "text-foreground";
+function HealthCheckItem({ label, passed, note }: { label: string; passed: boolean; note: string }) {
   return (
-    <div>
-      <p className="text-[11px] font-medium uppercase text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
-    </div>
-  );
-}
-
-function ThemeRow({ theme, recommendations, avgReturn, status }: { theme: string; recommendations: number; avgReturn: number; status: string }) {
-  const statusColors: Record<string, string> = { STRONG: "badge-green", NEUTRAL: "badge-blue", WEAK: "badge-amber" };
-  return (
-    <div className="flex items-center gap-4 rounded-lg border border-border/50 p-3 dark:border-border-dark/50">
-      <span className="w-40 text-sm font-medium">{theme}</span>
-      <span className="text-xs text-muted-foreground">{recommendations} signals</span>
-      <span className={`text-sm font-bold ${avgReturn >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-        {avgReturn >= 0 ? "+" : ""}{avgReturn.toFixed(1)}%
+    <div className="flex items-start gap-2 rounded-lg bg-white/40 p-2 dark:bg-slate-900/30">
+      <span className={`mt-0.5 text-sm ${passed ? "text-emerald-500" : "text-red-500"}`}>
+        {passed ? "✓" : "✗"}
       </span>
-      <span className={`badge ml-auto ${statusColors[status] || "badge-gray"}`}>{status}</span>
-    </div>
-  );
-}
-
-function PrincipleCard({ icon, label }: { icon: string; label: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-border p-3 dark:border-border-dark">
-      <span className="text-xl">{icon}</span>
-      <span className="text-sm font-medium">{label}</span>
-    </div>
-  );
-}
-
-function NotePreview({ date, title, theme }: { date: string; title: string; theme: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3 dark:border-border-dark/50">
-      <span className="text-[10px] text-muted-foreground">{date}</span>
-      <span className="flex-1 text-sm">{title}</span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-400">{theme}</span>
+      <div>
+        <p className="text-xs font-medium">{label}</p>
+        <p className="text-[10px] text-muted-foreground">{note}</p>
+      </div>
     </div>
   );
 }
