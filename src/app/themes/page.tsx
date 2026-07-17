@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { searchUniverse, ASSET_UNIVERSE } from "@/data/asset-universe";
 import type { UniverseAsset } from "@/data/asset-universe";
+import AssetDrawer from "@/components/AssetDrawer";
 
 // Conviction List tickers (already tracked)
 const CONVICTION_LIST_TICKERS = new Set([
@@ -64,6 +65,7 @@ export default function InvestmentLensPage() {
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [promoteMessage, setPromoteMessage] = useState<string | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<UniverseAsset | null>(null);
 
   // 1. Raw matches from theme search
   const rawAssets = useMemo(() => {
@@ -243,7 +245,8 @@ export default function InvestmentLensPage() {
                 {filteredAssets.map((asset) => {
                   const isOnConviction = CONVICTION_LIST_TICKERS.has(asset.ticker);
                   return (
-                    <div key={asset.ticker} className={`card flex flex-col justify-between transition hover:-translate-y-0.5 hover:shadow-elevated ${isOnConviction ? "opacity-60" : ""}`}>
+                    <div key={asset.ticker} className={`card flex flex-col justify-between transition hover:-translate-y-0.5 hover:shadow-elevated cursor-pointer ${isOnConviction ? "opacity-60" : ""}`}
+                      onClick={() => setSelectedAsset(asset)}>
                       <div>
                         <div className="mb-2 flex items-start justify-between">
                           <div>
@@ -289,6 +292,9 @@ export default function InvestmentLensPage() {
       <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground dark:border-border-dark">
         Analyst scans NYSE · NASDAQ · LSE · Euronext · Asia-Pacific · Latin America. Run tasks in any order.
       </div>
+
+      {/* Asset Detail Drawer */}
+      {selectedAsset && <AssetDrawer asset={selectedAsset} onClose={() => setSelectedAsset(null)} />}
     </div>
   );
 }
