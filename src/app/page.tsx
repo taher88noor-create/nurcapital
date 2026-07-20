@@ -8,25 +8,15 @@ import {
   type DrawdownResult,
   type HealthCheck,
 } from "@/lib/drawdown-engine";
+import { SIGNAL_RECORDS } from "@/data/assets";
 
-// Conviction List signal prices (read-only reference)
-const CONVICTION_SIGNALS: { ticker: string; name: string; signalPrice: number; theme: string }[] = [
-  { ticker: "TSM", name: "Taiwan Semiconductor", signalPrice: 165.20, theme: "Semiconductors" },
-  { ticker: "ASML", name: "ASML Holding", signalPrice: 878.50, theme: "Semiconductors" },
-  { ticker: "LLY", name: "Eli Lilly", signalPrice: 1085.00, theme: "Healthcare" },
-  { ticker: "CRWD", name: "CrowdStrike", signalPrice: 422.50, theme: "Cybersecurity" },
-  { ticker: "AMD", name: "Advanced Micro Devices", signalPrice: 155.40, theme: "Semiconductors" },
-  { ticker: "AVGO", name: "Broadcom", signalPrice: 230.50, theme: "Semiconductors" },
-  { ticker: "PANW", name: "Palo Alto Networks", signalPrice: 210.80, theme: "Cybersecurity" },
-  { ticker: "INFY", name: "Infosys", signalPrice: 19.80, theme: "AI Infrastructure" },
-  { ticker: "NU", name: "Nu Holdings", signalPrice: 14.20, theme: "Emerging Markets" },
-  { ticker: "SE", name: "Sea Limited", signalPrice: 138.50, theme: "Emerging Markets" },
-  { ticker: "CPNG", name: "Coupang", signalPrice: 26.40, theme: "Emerging Markets" },
-  { ticker: "GLOB", name: "Globant", signalPrice: 215.30, theme: "AI Infrastructure" },
-  { ticker: "MMYT", name: "MakeMyTrip", signalPrice: 108.40, theme: "Emerging Markets" },
-  { ticker: "NVO", name: "Novo Nordisk (ADR)", signalPrice: 95.80, theme: "Healthcare" },
-  { ticker: "ABB", name: "ABB Ltd", signalPrice: 56.20, theme: "Industrial Automation" },
-];
+// Derive conviction signals from the single source of truth
+const CONVICTION_SIGNALS = SIGNAL_RECORDS.map((s) => ({
+  ticker: s.ticker,
+  name: s.companyName,
+  signalPrice: s.signalPrice,
+  theme: s.theme,
+}));
 
 interface AnomalyCard extends DrawdownResult {
   theme: string;

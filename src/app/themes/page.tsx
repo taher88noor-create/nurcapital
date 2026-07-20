@@ -2,17 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { searchUniverse, ASSET_UNIVERSE } from "@/data/asset-universe";
-import type { UniverseAsset } from "@/data/asset-universe";
+import { searchUniverse, CONVICTION_TICKERS, type AssetMaster } from "@/data/assets";
 import AssetDrawer from "@/components/AssetDrawer";
-
-// Conviction List tickers (already tracked)
-const CONVICTION_LIST_TICKERS = new Set([
-  "TSM", "ASML", "LLY", "CRWD", "AMD", "AVGO", "PANW", "ABB", "NVO", "ENPH",
-  "INFY", "NU", "SE", "CPNG", "GLOB", "MMYT", "VALE", "PBR", "AMX", "FMX",
-  "RDY", "UMC", "PKX", "TTM",
-  "ISDE.L", "ISWD.L", "HTWD.L", "SEMI.L", "SMH.L", "INRG.L", "RENW.L", "HEAL.L", "VFEM.L",
-]);
 
 // Define the modular analyst tasks
 interface Task {
@@ -20,7 +11,7 @@ interface Task {
   title: string;
   shortDesc: string;
   explanation: string;
-  filterFn: (assets: UniverseAsset[]) => UniverseAsset[];
+  filterFn: (assets: AssetMaster[]) => AssetMaster[];
 }
 
 const ANALYST_TASKS: Task[] = [
@@ -65,7 +56,7 @@ export default function InvestmentLensPage() {
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [promoteMessage, setPromoteMessage] = useState<string | null>(null);
-  const [selectedAsset, setSelectedAsset] = useState<UniverseAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<AssetMaster | null>(null);
 
   // 1. Raw matches from theme search
   const rawAssets = useMemo(() => {
@@ -243,7 +234,7 @@ export default function InvestmentLensPage() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredAssets.map((asset) => {
-                  const isOnConviction = CONVICTION_LIST_TICKERS.has(asset.ticker);
+                  const isOnConviction = CONVICTION_TICKERS.has(asset.ticker);
                   return (
                     <div key={asset.ticker} className={`card flex flex-col justify-between transition hover:-translate-y-0.5 hover:shadow-elevated cursor-pointer ${isOnConviction ? "opacity-60" : ""}`}
                       onClick={() => setSelectedAsset(asset)}>
@@ -298,7 +289,7 @@ export default function InvestmentLensPage() {
         <AssetDrawer
           asset={selectedAsset}
           onClose={() => setSelectedAsset(null)}
-          trackedTickers={[...CONVICTION_LIST_TICKERS]}
+          trackedTickers={[...CONVICTION_TICKERS]}
           onPromote={handlePromote}
         />
       )}

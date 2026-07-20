@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { getAssetIdentity } from "@/data/asset-identity";
+import { SIGNAL_RECORDS } from "@/data/assets";
 
 // ── Animated Counter Hook ────────────────────────────────────────────────────
 
@@ -30,60 +31,9 @@ function useAnimatedNumber(target: number, duration = 600): number {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-// ── Static Signal Records (frozen at signal date — never overwritten) ────────
+// ── Signal type (derived from assets.ts SIGNAL_RECORDS) ──────────────────────
 
-interface Signal {
-  id: number;
-  ticker: string;
-  companyName: string;
-  rating: "BUY" | "HOLD" | "REDUCE";
-  signalDate: string;
-  signalPrice: number;
-  theme: string;
-  rationale: string;
-  regime: string;
-  assetType?: "stock" | "etf" | "fund";
-}
-
-const SIGNAL_RECORDS: Signal[] = [
-  // All signals dated 1 June 2026 (Nür Capital launch date)
-  // ── Developed Market Signals ───────────────────────────────────────────────
-  { id: 1, ticker: "TSM", companyName: "Taiwan Semiconductor", rating: "BUY", signalDate: "2026-06-01", signalPrice: 165.20, theme: "Semiconductors", rationale: "Leading foundry. AI demand structural. Monopoly in advanced nodes.", regime: "Weak Bull" },
-  { id: 2, ticker: "ASML", companyName: "ASML Holding", rating: "BUY", signalDate: "2026-06-01", signalPrice: 878.50, theme: "Semiconductors", rationale: "Sole EUV manufacturer. Multi-year backlog.", regime: "Weak Bull" },
-  { id: 3, ticker: "LLY", companyName: "Eli Lilly", rating: "BUY", signalDate: "2026-06-01", signalPrice: 1085.00, theme: "Healthcare", rationale: "GLP-1 leader. $100B+ obesity TAM.", regime: "Weak Bull" },
-  { id: 4, ticker: "CRWD", companyName: "CrowdStrike", rating: "BUY", signalDate: "2026-06-01", signalPrice: 422.50, theme: "Cybersecurity", rationale: "Endpoint security leader. 97% retention.", regime: "Weak Bull" },
-  { id: 5, ticker: "AMD", companyName: "Advanced Micro Devices", rating: "BUY", signalDate: "2026-06-01", signalPrice: 155.40, theme: "Semiconductors", rationale: "MI300 AI accelerator gaining share.", regime: "Weak Bull" },
-  { id: 6, ticker: "AVGO", companyName: "Broadcom", rating: "BUY", signalDate: "2026-06-01", signalPrice: 230.50, theme: "Semiconductors", rationale: "Custom AI chips for Google/Meta.", regime: "Weak Bull" },
-  { id: 7, ticker: "PANW", companyName: "Palo Alto Networks", rating: "BUY", signalDate: "2026-06-01", signalPrice: 210.80, theme: "Cybersecurity", rationale: "Platform consolidation leader.", regime: "Weak Bull" },
-  { id: 8, ticker: "ABB", companyName: "ABB Ltd", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 56.20, theme: "Industrial Automation", rationale: "Global automation leader. Swiss quality.", regime: "Weak Bull" },
-  { id: 9, ticker: "NVO", companyName: "Novo Nordisk (ADR)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 95.80, theme: "Healthcare", rationale: "GLP-1 pioneer. In correction but fundamentals intact.", regime: "Weak Bull" },
-  { id: 10, ticker: "ENPH", companyName: "Enphase Energy", rating: "REDUCE", signalDate: "2026-06-01", signalPrice: 72.30, theme: "Clean Energy", rationale: "In downtrend. High volatility. Reduce exposure.", regime: "Weak Bull" },
-  // ── Emerging Market Signals ─────────────────────────────────────────────────
-  { id: 11, ticker: "INFY", companyName: "Infosys (India)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 19.80, theme: "AI Infrastructure", rationale: "India #2 IT services. Enterprise AI implementation leader.", regime: "Weak Bull" },
-  { id: 12, ticker: "NU", companyName: "Nu Holdings (Brazil)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 14.20, theme: "Emerging Market Champions", rationale: "World's largest digital bank. 200M+ customers. Fee-based model.", regime: "Weak Bull" },
-  { id: 13, ticker: "SE", companyName: "Sea Limited (Singapore)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 138.50, theme: "Emerging Market Champions", rationale: "SE Asia's largest digital platform. Shopee + SeaMoney. Profitable.", regime: "Weak Bull" },
-  { id: 14, ticker: "CPNG", companyName: "Coupang (South Korea)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 26.40, theme: "Emerging Market Champions", rationale: "Korea's largest e-commerce. Rocket delivery. Now profitable.", regime: "Weak Bull" },
-  { id: 15, ticker: "GLOB", companyName: "Globant (Argentina)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 215.30, theme: "AI Infrastructure", rationale: "Argentina-based digital transformation. AI services leader.", regime: "Weak Bull" },
-  { id: 16, ticker: "MMYT", companyName: "MakeMyTrip (India)", rating: "BUY", signalDate: "2026-06-01", signalPrice: 108.40, theme: "Emerging Market Champions", rationale: "India's largest online travel platform. Rising middle class.", regime: "Weak Bull" },
-  { id: 17, ticker: "VALE", companyName: "Vale SA (Brazil)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 10.50, theme: "Emerging Market Champions", rationale: "World's largest iron ore producer. Strong dividend.", regime: "Weak Bull" },
-  { id: 18, ticker: "PBR", companyName: "Petrobras (Brazil)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 13.80, theme: "Energy Infrastructure", rationale: "Brazil national oil company. Deep-water pre-salt leader.", regime: "Weak Bull" },
-  { id: 19, ticker: "AMX", companyName: "América Móvil (Mexico)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 18.20, theme: "Emerging Market Champions", rationale: "LatAm largest telecom. 300M+ subscribers.", regime: "Weak Bull" },
-  { id: 20, ticker: "FMX", companyName: "FEMSA (Mexico)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 108.50, theme: "Consumer Staples", rationale: "Largest Coca-Cola bottler + OXXO stores (21,000+).", regime: "Weak Bull" },
-  { id: 21, ticker: "RDY", companyName: "Dr. Reddy's (India)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 74.20, theme: "Healthcare", rationale: "India's largest pharma. Generics + biosimilar pipeline.", regime: "Weak Bull" },
-  { id: 22, ticker: "UMC", companyName: "United Microelectronics (Taiwan)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 8.05, theme: "Semiconductors", rationale: "World #3 foundry. Mature node specialist.", regime: "Weak Bull" },
-  { id: 23, ticker: "PKX", companyName: "POSCO Holdings (Korea)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 43.80, theme: "Emerging Market Champions", rationale: "World #4 steelmaker. Pivoting to battery materials.", regime: "Weak Bull" },
-  { id: 24, ticker: "TTM", companyName: "Tata Motors (India)", rating: "HOLD", signalDate: "2026-06-01", signalPrice: 10.80, theme: "Emerging Market Champions", rationale: "India #1 commercial vehicles. Owns Jaguar Land Rover.", regime: "Weak Bull" },
-  // ── ETFs & Funds (10 Jul 2026 — new assets only, no duplicates) ────────────
-  { id: 25, ticker: "ISDE.L", companyName: "iShares MSCI EM Islamic UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 1850.00, theme: "Emerging Market Champions", rationale: "Only LSE-listed Shariah-compliant EM ETF. Pre-screened Islamic universe. Diversified across Taiwan, India, Korea, Brazil. 0.85% TER.", regime: "Weak Bull", assetType: "etf" },
-  { id: 26, ticker: "ISWD.L", companyName: "iShares MSCI World Islamic UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 4928.00, theme: "Halal Finance", rationale: "Global developed market Shariah ETF. LSE-listed (priced in GBX). Heavy tech weighting. 0.30% TER. 32% 1Y return.", regime: "Weak Bull", assetType: "etf" },
-  { id: 27, ticker: "HTWD.L", companyName: "HSBC MSCI Taiwan Capped UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 4582.00, theme: "Semiconductors", rationale: "Pure Taiwan semiconductor exposure via LSE (priced in GBX). TSMC ~35% weight. 0.30% TER.", regime: "Weak Bull", assetType: "etf" },
-  { id: 28, ticker: "SEMI.L", companyName: "iShares MSCI Global Semiconductors UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 575.00, theme: "Semiconductors", rationale: "Pure global semiconductor ETF. +158% 1Y. Holdings: TSMC, ASML, Broadcom, AMD. No weapons/banks. 0.35% TER.", regime: "Weak Bull", assetType: "etf" },
-  { id: 29, ticker: "SMH.L", companyName: "VanEck Semiconductor UCITS ETF", rating: "BUY", signalDate: "2026-07-10", signalPrice: 10960.00, theme: "Semiconductors", rationale: "Europe's first semi ETF. $9B AUM. +89% YTD. Excludes weapons. Pure-play (50%+ revenue). 0.35% TER.", regime: "Weak Bull", assetType: "etf" },
-  { id: 30, ticker: "INRG.L", companyName: "iShares Global Clean Energy UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 850.00, theme: "Clean Energy", rationale: "Solar/wind/hydrogen. Cyclically weak but structurally sound. 0.65% TER. Wait for rate cycle turn.", regime: "Weak Bull", assetType: "etf" },
-  { id: 31, ticker: "RENW.L", companyName: "L&G Clean Energy UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 920.00, theme: "Clean Energy", rationale: "Broader clean energy. Includes grid storage. 0.49% TER.", regime: "Weak Bull", assetType: "etf" },
-  { id: 32, ticker: "HEAL.L", companyName: "iShares Healthcare Innovation UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 780.00, theme: "Healthcare", rationale: "Biotech/medtech innovation. 0.40% TER. Recovering from correction. GLP-1 + gene therapy catalysts.", regime: "Weak Bull", assetType: "etf" },
-  { id: 33, ticker: "VFEM.L", companyName: "Vanguard FTSE Emerging Markets UCITS ETF", rating: "HOLD", signalDate: "2026-07-10", signalPrice: 5200.00, theme: "Emerging Market Champions", rationale: "Cheapest EM exposure (0.22% TER). Broad. Use alongside ISDE.", regime: "Weak Bull", assetType: "etf" },
-];
+type Signal = (typeof SIGNAL_RECORDS)[number];
 
 // ── Horizon maturity calculation ─────────────────────────────────────────────
 

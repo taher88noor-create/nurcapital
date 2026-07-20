@@ -3,10 +3,10 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
-import type { UniverseAsset } from "@/data/asset-universe";
+import type { AssetMaster } from "@/data/assets";
 
 interface AssetDrawerProps {
-  asset: UniverseAsset | null;
+  asset: AssetMaster | null;
   onClose: () => void;
   trackedTickers: string[];
   onPromote: (ticker: string, name: string) => void;
