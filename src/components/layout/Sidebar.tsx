@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getAnalystStatus, subscribeAnalystStatus, type AnalystStatus } from "@/lib/api";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: "◎" },
@@ -10,21 +11,31 @@ const navigation = [
   { name: "Investment Lens", href: "/themes", icon: "◐" },
 ];
 
+const STATUS_DISPLAY: Record<AnalystStatus, { icon: string; label: string; color: string }> = {
+  standby: { icon: "🟡", label: "Analyst: Standby (simulated data)", color: "text-amber-600 dark:text-amber-400" },
+  warming: { icon: "⏳", label: "Analyst: Warming up...", color: "text-blue-600 dark:text-blue-400" },
+  live: { icon: "🟢", label: "Analyst: Live", color: "text-emerald-600 dark:text-emerald-400" },
+  offline: { icon: "🔴", label: "Analyst: Offline", color: "text-red-600 dark:text-red-400" },
+};
+
 export function Sidebar() {
   const pathname = usePathname();
-  const [dataStatus, setDataStatus] = useState<{ live: boolean; timestamp: string | null }>({ live: false, timestamp: null });
+  const [status, setStatus] = useState<AnalystStatus>("standby");
+  const [timestamp, setTimestamp] = useState<string | null>(null);
+
+  const syncStatus = useCallback(() => {
+    const s = getAnalystStatus();
+    setStatus(s.status);
+    setTimestamp(s.timestamp);
+  }, []);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("nc_prices");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.prices && Object.keys(parsed.prices).length > 0) {
-          setDataStatus({ live: true, timestamp: parsed.timestamp || null });
-        }
-      }
-    } catch { /* ignore */ }
-  }, []);
+    syncStatus();
+    const unsub = subscribeAnalystStatus(syncStatus);
+    return unsub;
+  }, [syncStatus]);
+
+  const display = STATUS_DISPLAY[status];
 
   return (
     <aside className="hidden w-64 flex-col border-r border-border bg-panel dark:border-border-dark dark:bg-panel-dark lg:flex">
@@ -62,15 +73,17 @@ export function Sidebar() {
 
       {/* Data Source Indicator */}
       <div className="border-t border-border px-4 py-3 dark:border-border-dark">
-        {dataStatus.live ? (
-          <div>
-            <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">🟢 Analyst: Live</p>
-            <p className="mt-0.5 text-[9px] text-muted-foreground">{dataStatus.timestamp}</p>
-          </div>
-        ) : (
-          <div>
-            <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400">🟡 Analyst: Standby (simulated data)</p>
-          </div>
+        <p className={`text-[10px] font-medium ${display.color}`}>
+          {display.icon} {display.label}
+        </p>
+        {status === "live" && timestamp && (
+          <p className="mt-0.5 text-[9px] text-muted-foreground">{timestamp}</p>
+        )}
+        {status === "warming" && (
+          <p className="mt-0.5 text-[9px] text-muted-foreground">Cold start — first request takes ~30s</p>
+        )}
+        {status === "offline" && (
+          <p className="mt-0.5 text-[9px] text-muted-foreground">Backend unreachable after retries</p>
         )}
       </div>
 

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { getAssetIdentity } from "@/data/asset-identity";
 import { SIGNAL_RECORDS } from "@/data/assets";
+import { postAPIFresh } from "@/lib/api";
 
 // ── Animated Counter Hook ────────────────────────────────────────────────────
 
@@ -28,8 +29,6 @@ function useAnimatedNumber(target: number, duration = 600): number {
 
   return current;
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ── Signal type (derived from assets.ts SIGNAL_RECORDS) ──────────────────────
 
@@ -81,7 +80,6 @@ export default function RecommendationPerformancePage() {
 
   // Cache freshness calculation
   const getCacheFreshness = (): { label: string; color: string; icon: string } => {
-    if (dataMode === "stored") return { label: "Analyst has not reviewed yet", color: "text-muted-foreground", icon: "○" };
     if (!lastRefreshedIso) return { label: "Analyst has not reviewed yet", color: "text-muted-foreground", icon: "○" };
     const ageMs = Date.now() - new Date(lastRefreshedIso).getTime();
     const ageHours = ageMs / (1000 * 60 * 60);
@@ -91,6 +89,19 @@ export default function RecommendationPerformancePage() {
   };
 
   const freshness = getCacheFreshness();
+
+  // Calculate age string for display
+  const getCacheAge = (): string | null => {
+    if (!lastRefreshedIso) return null;
+    const ageMs = Date.now() - new Date(lastRefreshedIso).getTime();
+    const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+    if (ageHours < 1) return "< 1 hour ago";
+    if (ageHours < 24) return `${ageHours} hour${ageHours > 1 ? "s" : ""} ago`;
+    const ageDays = Math.floor(ageHours / 24);
+    return `${ageDays} day${ageDays > 1 ? "s" : ""} ago`;
+  };
+
+  const cacheAge = getCacheAge();
 
   // Staged prices — approximate market prices as of signal dates
   const stagedPrices: Record<string, number> = {
@@ -126,27 +137,15 @@ export default function RecommendationPerformancePage() {
     setFailedTickers(new Set());
     const log: string[] = [];
 
-    // First wake up the backend (free tier may be sleeping)
-    try {
-      log.push("Waking backend...");
-      await fetch(`${API_URL}/api/health`, { signal: AbortSignal.timeout(60000) });
-      log.push("Backend awake.");
-    } catch {
-      log.push("Backend wake-up timed out. Trying price fetch anyway...");
-    }
-
     try {
       const tickers = SIGNAL_RECORDS.map((s) => s.ticker);
       log.push(`Requesting prices for ${tickers.length} tickers: ${tickers.join(", ")}`);
 
-      const res = await fetch(`${API_URL}/api/mock-portfolio/prices/fetch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tickers }),
-        signal: AbortSignal.timeout(90000), // 90 second timeout for price fetch
-      });
-      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
-      const json = await res.json();
+      const json = await postAPIFresh<{ prices: Record<string, number>; errors: { ticker: string; error: string }[] }>(
+        "/api/mock-portfolio/prices/fetch",
+        { tickers }
+      );
+
       const prices = json.prices || {};
       const errors = json.errors || [];
 
@@ -281,11 +280,11 @@ export default function RecommendationPerformancePage() {
             <span className={`text-xs font-medium ${freshness.color}`}>
               {freshness.icon} {freshness.label}
             </span>
-            {dataMode === "stored" && (
+            {dataMode === "stored" && !lastRefreshedIso && (
               <p className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">Ask analyst to review for latest market direction.</p>
             )}
             {dataMode === "live" && lastRefreshed && (
-              <p className="mt-1 text-[10px] text-muted-foreground">Last reviewed: {lastRefreshed}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">Last reviewed: {lastRefreshed}{cacheAge ? ` (${cacheAge})` : ""}</p>
             )}
             {freshness.icon === "🔴" && (
               <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">Click Ask analyst to review for the latest prices.</p>
@@ -306,9 +305,14 @@ export default function RecommendationPerformancePage() {
       )}
 
       {/* Staged data info */}
-      {dataMode === "stored" && (
+      {dataMode === "stored" && !lastRefreshedIso && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
           ⚠ Showing signal prices only. Click <strong>Ask analyst to review</strong> for live market data and returns.
+        </div>
+      )}
+      {dataMode === "live" && cacheAge && freshness.icon === "🔴" && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+          ⚠ Showing cached prices from {cacheAge}. Click <strong>Ask analyst to review</strong> for fresh data.
         </div>
       )}
 

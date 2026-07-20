@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { searchUniverse, CONVICTION_TICKERS, type AssetMaster } from "@/data/assets";
-import { postAPI, wakeBackend } from "@/lib/api";
+import { postAPI } from "@/lib/api";
 import AssetDrawer from "@/components/AssetDrawer";
 
 // ── Types for backend responses ──────────────────────────────────────────────
@@ -91,6 +91,7 @@ export default function InvestmentLensPage() {
   const [promoteMessage, setPromoteMessage] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<AssetMaster | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cacheHitMessage, setCacheHitMessage] = useState<string | null>(null);
 
   // Backend analysis results (keyed by ticker)
   const [technicalResults, setTechnicalResults] = useState<Record<string, TechnicalResult>>({});
@@ -176,6 +177,7 @@ export default function InvestmentLensPage() {
   const runTask = useCallback(async (taskId: string) => {
     setRunningTaskId(taskId);
     setErrorMessage(null);
+    setCacheHitMessage(null);
 
     // Local tasks execute immediately
     const isLocalTask = LOCAL_TASKS.some((t) => t.id === taskId);
@@ -207,11 +209,8 @@ export default function InvestmentLensPage() {
     }
 
     try {
-      // Wake backend first (Render free tier)
-      await wakeBackend();
-
       if (taskId === "technical") {
-        const data = await postAPI<AnalystResponse<TechnicalResult>>(
+        const { data, fromCache } = await postAPI<AnalystResponse<TechnicalResult>>(
           "/api/analyst/technical-scan",
           { tickers }
         );
@@ -222,8 +221,9 @@ export default function InvestmentLensPage() {
             .map(([ticker]) => ticker)
         );
         setTechnicalPassTickers(passing);
+        if (fromCache) setCacheHitMessage("Cache hit — showing recent analysis (< 5 min old)");
       } else if (taskId === "valuation") {
-        const data = await postAPI<AnalystResponse<ConvictionResult>>(
+        const { data, fromCache } = await postAPI<AnalystResponse<ConvictionResult>>(
           "/api/analyst/conviction-grade",
           { tickers }
         );
@@ -234,6 +234,7 @@ export default function InvestmentLensPage() {
             .map(([ticker]) => ticker)
         );
         setConvictionPassTickers(passing);
+        if (fromCache) setCacheHitMessage("Cache hit — showing recent analysis (< 5 min old)");
       }
 
       setExecutedTaskIds((prev) => [...prev, taskId]);
@@ -322,6 +323,13 @@ export default function InvestmentLensPage() {
           {errorMessage && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
               ⚠ {errorMessage}
+            </div>
+          )}
+
+          {/* Cache Hit Indicator */}
+          {cacheHitMessage && (
+            <div className="rounded-lg border border-blue-100 bg-blue-50 p-2 text-xs text-blue-600 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
+              ⚡ {cacheHitMessage}
             </div>
           )}
 
