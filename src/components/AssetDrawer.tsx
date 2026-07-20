@@ -167,7 +167,10 @@ export default function AssetDrawer({ asset, onClose, trackedTickers, onPromote 
           </div>
 
           {/* Chart */}
-          <div className="h-48 rounded-xl border border-border p-2 dark:border-border-dark">
+          <div className="relative h-48 rounded-xl border border-border p-2 dark:border-border-dark">
+            <span className="absolute right-3 top-3 z-10 text-[10px] text-muted-foreground opacity-60">
+              Simulated Price History — Click &apos;Ask analyst to review&apos; for live data
+            </span>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>

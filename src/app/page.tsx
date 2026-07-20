@@ -58,7 +58,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Portfolio Command Centre</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Real-time anomaly detection across your Conviction List. Identifying drawdown opportunities.
+          Portfolio Anomaly Detection (Simulated Data). Simulated drawdowns based on signal prices. Click &apos;Ask analyst to review&apos; on the Conviction List for live market data.
         </p>
       </div>
 
@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
       {/* Footer */}
       <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground dark:border-border-dark">
-        Drawdowns calculated against simulated 52-week highs. Connect live data for real-time anomaly detection. Not financial advice.
+        All prices and 52-week highs are simulated. Not financial advice. Connect live data for real-time anomaly detection.
       </div>
     </div>
   );

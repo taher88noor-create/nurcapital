@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +12,19 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [dataStatus, setDataStatus] = useState<{ live: boolean; timestamp: string | null }>({ live: false, timestamp: null });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("nc_prices");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.prices && Object.keys(parsed.prices).length > 0) {
+          setDataStatus({ live: true, timestamp: parsed.timestamp || null });
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   return (
     <aside className="hidden w-64 flex-col border-r border-border bg-panel dark:border-border-dark dark:bg-panel-dark lg:flex">
@@ -45,6 +59,20 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Data Source Indicator */}
+      <div className="border-t border-border px-4 py-3 dark:border-border-dark">
+        {dataStatus.live ? (
+          <div>
+            <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">🟢 Analyst: Live</p>
+            <p className="mt-0.5 text-[9px] text-muted-foreground">{dataStatus.timestamp}</p>
+          </div>
+        ) : (
+          <div>
+            <p className="text-[10px] font-medium text-amber-600 dark:text-amber-400">🟡 Analyst: Standby (simulated data)</p>
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <div className="border-t border-border p-4 dark:border-border-dark">

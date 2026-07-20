@@ -307,8 +307,8 @@ export default function RecommendationPerformancePage() {
 
       {/* Staged data info */}
       {dataMode === "stored" && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
-          ℹ Showing prices from signal date. Click <strong>Ask analyst to review</strong> for latest market direction.
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+          ⚠ Showing signal prices only. Click <strong>Ask analyst to review</strong> for live market data and returns.
         </div>
       )}
 
@@ -424,8 +424,8 @@ export default function RecommendationPerformancePage() {
               const identity = getAssetIdentity(s.ticker);
               const isExpanded = expandedSignal === s.id;
               const source = getPriceSource(s.ticker);
-              const sourceLabel = source === "live" ? "Live" : source === "failed" ? "Failed" : "Staged";
-              const sourceColor = source === "live" ? "text-emerald-600 dark:text-emerald-400" : source === "failed" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400";
+              const sourceLabel = source === "live" ? "Live" : source === "failed" ? "Failed" : "Signal price";
+              const sourceColor = source === "live" ? "text-emerald-600 dark:text-emerald-400" : source === "failed" ? "text-red-600 dark:text-red-400" : "text-muted-foreground";
               const ajBell = identity?.ajBellActionable;
               return (
                 <tr key={s.id} className={`border-b border-border/30 cursor-pointer hover:bg-slate-50 dark:border-border-dark/30 dark:hover:bg-slate-800/50 ${!ajBell ? "opacity-60" : ""}`} onClick={() => setExpandedSignal(isExpanded ? null : s.id)}>
