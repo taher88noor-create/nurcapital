@@ -8,7 +8,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import screening, assets, themes, market_data, portfolio, eligibility, pipeline, mock_portfolio
+from app.routers import screening, assets, themes, market_data, portfolio, eligibility, pipeline, mock_portfolio, analyst
 
 app = FastAPI(
     title="Nür Capital API",
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(pipeline.router, prefix="/api/pipeline", tags=["pipeline"])
+app.include_router(analyst.router, prefix="/api/analyst", tags=["analyst"])
 app.include_router(mock_portfolio.router, prefix="/api/mock-portfolio", tags=["mock-portfolio"])
 app.include_router(eligibility.router, prefix="/api/eligibility", tags=["eligibility"])
 app.include_router(screening.router, prefix="/api/screening", tags=["screening"])
