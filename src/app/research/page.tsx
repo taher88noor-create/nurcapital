@@ -96,9 +96,9 @@ export default function RecommendationPerformancePage() {
     GLOB: 220.50, MMYT: 115.60, VALE: 10.90, PBR: 14.10,
     AMX: 18.40, FMX: 109.80, RDY: 76.40, UMC: 8.20,
     PKX: 44.50, TTM: 11.10,
-    "ISDE.L": 1850.00, "ISWD.L": 4928.00, "HTWD.L": 4582.00,
-    "SEMI.L": 575.00, "SMH.L": 10960.00, "INRG.L": 850.00,
-    "RENW.L": 920.00, "HEAL.L": 780.00, "VFEM.L": 5200.00,
+    "ISDE.L": 18.50, "ISWD.L": 49.28, "HTWD.L": 45.82,
+    "SEMI.L": 5.75, "SMH.L": 109.60, "INRG.L": 8.50,
+    "RENW.L": 9.20, "HEAL.L": 7.80, "VFEM.L": 52.00,
   };
 
   const getPriceSource = (ticker: string): "live" | "staged" | "failed" => {

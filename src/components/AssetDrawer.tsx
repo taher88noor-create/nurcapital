@@ -95,7 +95,7 @@ export default function AssetDrawer({ asset, onClose, trackedTickers, onPromote 
   if (!asset) return null;
 
   const isLse = asset.ticker.endsWith(".L");
-  const currencySymbol = isLse ? "GBX" : "$";
+  const currencySymbol = isLse ? "£" : "$";
   const startPrice = chartData[0]?.price || 1;
   const endPrice = chartData[chartData.length - 1]?.price || 1;
   const totalReturn = ((endPrice - startPrice) / startPrice) * 100;
