@@ -7,8 +7,8 @@ import { getAnalystStatus, subscribeAnalystStatus, type AnalystStatus } from "@/
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: "◎" },
-  { name: "Conviction List", href: "/research", icon: "◆" },
-  { name: "Investment Lens", href: "/themes", icon: "◐" },
+  { name: "Timing", href: "/research", icon: "◆", subtitle: "Entry & monitor" },
+  { name: "Discovery", href: "/themes", icon: "◐", subtitle: "Long-term" },
 ];
 
 const STATUS_DISPLAY: Record<AnalystStatus, { icon: string; label: string; color: string }> = {
@@ -65,7 +65,12 @@ export function Sidebar() {
               }`}
             >
               <span className="text-base">{item.icon}</span>
-              {item.name}
+              <div>
+                <span>{item.name}</span>
+                {"subtitle" in item && item.subtitle && (
+                  <span className="ml-1.5 text-[9px] text-muted-foreground">{item.subtitle}</span>
+                )}
+              </div>
             </Link>
           );
         })}

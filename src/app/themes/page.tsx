@@ -8,18 +8,6 @@ import AssetDrawer from "@/components/AssetDrawer";
 
 // ── Types for backend responses ──────────────────────────────────────────────
 
-interface TechnicalResult {
-  current_price: number | null;
-  ma50: number | null;
-  ma200: number | null;
-  rsi14: number | null;
-  trend_score: number | null;
-  momentum_score: number | null;
-  volatility_score: number | null;
-  market_regime: string;
-  pass: boolean;
-}
-
 interface ConvictionResult {
   current_price: number | null;
   trend_score: number | null;
@@ -62,16 +50,17 @@ const LOCAL_TASKS: Task[] = [
     explanation: "Filters out highly illiquid tickers, restricted local listings, or foreign assets that do not have active ADRs (American Depositary Receipts) or direct LSE listings, ensuring you can execute real trades on your main broker.",
     filterFn: (assets) => assets.filter((a) => a.ajBell === true),
   },
+  {
+    id: "growth",
+    title: "Fundamental Growth Scan",
+    shortDesc: "Identify structurally growing businesses.",
+    explanation: "Scores assets on revenue growth trajectory, margin stability, and market expansion potential. Keeps quality businesses even if currently out of favour technically. Long-term horizon: 3-10 years.",
+    filterFn: (assets) => assets.filter((a) => (a.growthScore ?? 0) >= 6),
+  },
 ];
 
-// Task metadata for backend-powered tasks (filterFn is dynamic, not static)
+// Task metadata for backend-powered tasks
 const BACKEND_TASK_META = [
-  {
-    id: "technical",
-    title: "Technical Momentum Scan",
-    shortDesc: "Live MA50/MA200/RSI analysis via Yahoo Finance.",
-    explanation: "Fetches real price data from Yahoo Finance, calculates 50-day and 200-day moving averages plus RSI(14). Filters out assets where price is below both moving averages or RSI indicates oversold weakness (below 40).",
-  },
   {
     id: "valuation",
     title: "Conviction Pricing Matrix",
@@ -94,11 +83,9 @@ export default function InvestmentLensPage() {
   const [cacheHitMessage, setCacheHitMessage] = useState<string | null>(null);
 
   // Backend analysis results (keyed by ticker)
-  const [technicalResults, setTechnicalResults] = useState<Record<string, TechnicalResult>>({});
   const [convictionResults, setConvictionResults] = useState<Record<string, ConvictionResult>>({});
 
   // Tickers that passed each backend filter
-  const [technicalPassTickers, setTechnicalPassTickers] = useState<Set<string> | null>(null);
   const [convictionPassTickers, setConvictionPassTickers] = useState<Set<string> | null>(null);
 
   // 1. Raw matches from theme search
@@ -120,16 +107,13 @@ export default function InvestmentLensPage() {
       }
 
       // Backend tasks
-      if (taskId === "technical" && technicalPassTickers) {
-        result = result.filter((a) => technicalPassTickers.has(a.ticker));
-      }
       if (taskId === "valuation" && convictionPassTickers) {
         result = result.filter((a) => convictionPassTickers.has(a.ticker));
       }
     });
 
     return result;
-  }, [rawAssets, executedTaskIds, technicalPassTickers, convictionPassTickers]);
+  }, [rawAssets, executedTaskIds, convictionPassTickers]);
 
   // Delta calculator for badge
   const getFilterDelta = (taskId: string) => {
@@ -138,9 +122,6 @@ export default function InvestmentLensPage() {
     executedTaskIds.filter((id) => id !== taskId).forEach((id) => {
       const localTask = LOCAL_TASKS.find((t) => t.id === id);
       if (localTask) { pool = localTask.filterFn(pool); return; }
-      if (id === "technical" && technicalPassTickers) {
-        pool = pool.filter((a) => technicalPassTickers.has(a.ticker));
-      }
       if (id === "valuation" && convictionPassTickers) {
         pool = pool.filter((a) => convictionPassTickers.has(a.ticker));
       }
@@ -150,9 +131,7 @@ export default function InvestmentLensPage() {
     let after = [...pool];
     const localTask = LOCAL_TASKS.find((t) => t.id === taskId);
     if (localTask) { after = localTask.filterFn(pool); }
-    else if (taskId === "technical" && technicalPassTickers) {
-      after = pool.filter((a) => technicalPassTickers.has(a.ticker));
-    } else if (taskId === "valuation" && convictionPassTickers) {
+    else if (taskId === "valuation" && convictionPassTickers) {
       after = pool.filter((a) => convictionPassTickers.has(a.ticker));
     }
 
@@ -164,9 +143,7 @@ export default function InvestmentLensPage() {
     if (themeInput.trim()) {
       setActiveTheme(themeInput.trim());
       setExecutedTaskIds([]);
-      setTechnicalResults({});
       setConvictionResults({});
-      setTechnicalPassTickers(null);
       setConvictionPassTickers(null);
       setErrorMessage(null);
     }
@@ -192,9 +169,6 @@ export default function InvestmentLensPage() {
     executedTaskIds.forEach((id) => {
       const lt = LOCAL_TASKS.find((t) => t.id === id);
       if (lt) { currentPool = lt.filterFn(currentPool); return; }
-      if (id === "technical" && technicalPassTickers) {
-        currentPool = currentPool.filter((a) => technicalPassTickers.has(a.ticker));
-      }
       if (id === "valuation" && convictionPassTickers) {
         currentPool = currentPool.filter((a) => convictionPassTickers.has(a.ticker));
       }
@@ -209,20 +183,7 @@ export default function InvestmentLensPage() {
     }
 
     try {
-      if (taskId === "technical") {
-        const { data, fromCache } = await postAPI<AnalystResponse<TechnicalResult>>(
-          "/api/analyst/technical-scan",
-          { tickers }
-        );
-        setTechnicalResults(data.results);
-        const passing = new Set(
-          Object.entries(data.results)
-            .filter(([, r]) => r.pass)
-            .map(([ticker]) => ticker)
-        );
-        setTechnicalPassTickers(passing);
-        if (fromCache) setCacheHitMessage("Cache hit — showing recent analysis (< 5 min old)");
-      } else if (taskId === "valuation") {
+      if (taskId === "valuation") {
         const { data, fromCache } = await postAPI<AnalystResponse<ConvictionResult>>(
           "/api/analyst/conviction-grade",
           { tickers }
@@ -242,23 +203,17 @@ export default function InvestmentLensPage() {
       const msg = e instanceof Error ? e.message : "Unknown error";
       setErrorMessage(`Analyst unavailable: ${msg}. Showing unfiltered pool.`);
       // Don't filter on error — mark task as executed but pass all
-      if (taskId === "technical") {
-        setTechnicalPassTickers(new Set(tickers));
-      } else if (taskId === "valuation") {
+      if (taskId === "valuation") {
         setConvictionPassTickers(new Set(tickers));
       }
       setExecutedTaskIds((prev) => [...prev, taskId]);
     } finally {
       setRunningTaskId(null);
     }
-  }, [rawAssets, executedTaskIds, technicalPassTickers, convictionPassTickers]);
+  }, [rawAssets, executedTaskIds, convictionPassTickers]);
 
   const resetTask = (taskId: string) => {
     setExecutedTaskIds((prev) => prev.filter((id) => id !== taskId));
-    if (taskId === "technical") {
-      setTechnicalPassTickers(null);
-      setTechnicalResults({});
-    }
     if (taskId === "valuation") {
       setConvictionPassTickers(null);
       setConvictionResults({});
@@ -281,8 +236,8 @@ export default function InvestmentLensPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Investment Lens</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Input your thematic mandate. Deploy modular analytic checks to screen down the universe.</p>
+        <h1 className="text-2xl font-bold tracking-tight">Long-Term Discovery Engine</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Identify structurally growing businesses for 3-10 year holds.</p>
       </div>
 
       {/* Theme Search */}
@@ -412,7 +367,6 @@ export default function InvestmentLensPage() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredAssets.map((asset) => {
                   const isOnConviction = CONVICTION_TICKERS.has(asset.ticker);
-                  const tech = technicalResults[asset.ticker];
                   const conv = convictionResults[asset.ticker];
 
                   return (
@@ -436,22 +390,18 @@ export default function InvestmentLensPage() {
                           </div>
                         </div>
 
-                        {/* Technical scores display */}
-                        {tech && (
-                          <div className="mb-2 rounded bg-slate-50 px-2 py-1.5 text-[10px] font-mono dark:bg-slate-800/50">
-                            <span className="text-muted-foreground">MA50: </span>
-                            <span className="font-medium">${tech.ma50?.toFixed(2) ?? "—"}</span>
-                            <span className="mx-1.5 text-muted-foreground">|</span>
-                            <span className="text-muted-foreground">MA200: </span>
-                            <span className="font-medium">${tech.ma200?.toFixed(2) ?? "—"}</span>
-                            <span className="mx-1.5 text-muted-foreground">|</span>
-                            <span className="text-muted-foreground">RSI: </span>
-                            <span className={`font-medium ${
-                              tech.rsi14 === null ? "text-muted-foreground" :
-                              tech.rsi14 < 40 ? "text-red-600 dark:text-red-400" :
-                              tech.rsi14 <= 60 ? "text-amber-600 dark:text-amber-400" :
-                              "text-emerald-600 dark:text-emerald-400"
-                            }`}>{tech.rsi14?.toFixed(0) ?? "—"}</span>
+                        {/* Growth scores display */}
+                        {asset.growthScore !== undefined && (
+                          <div className="mb-2 rounded bg-slate-50 px-2 py-1.5 text-[10px] dark:bg-slate-800/50">
+                            <div className="flex items-center gap-3">
+                              <span className={`font-bold ${
+                                asset.growthScore >= 8 ? "text-emerald-600 dark:text-emerald-400" :
+                                asset.growthScore >= 6 ? "text-amber-600 dark:text-amber-400" :
+                                "text-red-600 dark:text-red-400"
+                              }`}>Growth: {asset.growthScore}/10</span>
+                              {asset.revenueCagr && <span className="text-muted-foreground">Revenue: {asset.revenueCagr}</span>}
+                              {asset.marginTrend && <span className="text-muted-foreground">Margins: {asset.marginTrend === "expanding" ? "↑" : asset.marginTrend === "contracting" ? "↓" : "→"} {asset.marginTrend}</span>}
+                            </div>
                           </div>
                         )}
 
@@ -503,7 +453,7 @@ export default function InvestmentLensPage() {
       )}
 
       <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground dark:border-border-dark">
-        Analyst scans NYSE · NASDAQ · LSE · Euronext · Asia-Pacific · Latin America. Run tasks in any order.
+        Long-term discovery across NYSE · NASDAQ · LSE · Euronext · Asia-Pacific · Latin America. Technical entry timing is handled separately on the Conviction List.
       </div>
 
       {/* Asset Detail Drawer */}

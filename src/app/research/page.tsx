@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { getAssetIdentity } from "@/data/asset-identity";
 import { SIGNAL_RECORDS } from "@/data/assets";
-import { postAPIFresh } from "@/lib/api";
+import { postAPIFresh, postAPI } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 
 // ── Animated Counter Hook ────────────────────────────────────────────────────
@@ -64,6 +64,11 @@ export default function RecommendationPerformancePage() {
   const [expandedSignal, setExpandedSignal] = useState<number | null>(null);
   const [refreshLog, setRefreshLog] = useState<string[]>([]);
   const [showLog, setShowLog] = useState(false);
+
+  // Entry timing state
+  const [entryTimings, setEntryTimings] = useState<Record<string, { ma50: number | null; ma200: number | null; rsi14: number | null; grade: string }>>({});
+  const [analysingTicker, setAnalysingTicker] = useState<string | null>(null);
+  const [analysingAll, setAnalysingAll] = useState(false);
 
   // Cache freshness
   const getCacheFreshness = (): { label: string; color: string; icon: string } => {
@@ -164,6 +169,49 @@ export default function RecommendationPerformancePage() {
     return signalPrice;
   };
 
+  // Entry timing grade logic
+  const gradeEntry = (result: { ma50: number | null; ma200: number | null; rsi14: number | null; current_price: number | null; trend_score: number | null }): string => {
+    const { ma50, ma200, rsi14, current_price, trend_score } = result;
+    if (!current_price || !ma50 || !ma200 || rsi14 === null) return "WAIT";
+    if (current_price < ma200 && (trend_score ?? 0) < -0.2) return "AVOID";
+    if (current_price < ma200) return "WAIT";
+    if (current_price > ma50 && rsi14 >= 40 && rsi14 <= 70) return "ENTER";
+    if (rsi14 < 40 && current_price >= ma200 * 0.95) return "ACCUMULATE";
+    return "WAIT";
+  };
+
+  const analyseEntryTiming = async (ticker: string) => {
+    setAnalysingTicker(ticker);
+    try {
+      const { data } = await postAPI<{ results: Record<string, any>; errors: any[] }>(
+        "/api/analyst/technical-scan",
+        { tickers: [ticker] }
+      );
+      if (data.results[ticker]) {
+        const r = data.results[ticker];
+        setEntryTimings((prev) => ({ ...prev, [ticker]: { ma50: r.ma50, ma200: r.ma200, rsi14: r.rsi14, grade: gradeEntry(r) } }));
+      }
+    } catch { /* ignore */ }
+    setAnalysingTicker(null);
+  };
+
+  const analyseAllEntryTimings = async () => {
+    setAnalysingAll(true);
+    const buyTickers = SIGNAL_RECORDS.filter((s) => s.rating === "BUY").map((s) => s.ticker);
+    try {
+      const { data } = await postAPI<{ results: Record<string, any>; errors: any[] }>(
+        "/api/analyst/technical-scan",
+        { tickers: buyTickers }
+      );
+      const newTimings: Record<string, { ma50: number | null; ma200: number | null; rsi14: number | null; grade: string }> = {};
+      for (const [ticker, r] of Object.entries(data.results)) {
+        newTimings[ticker] = { ma50: (r as any).ma50, ma200: (r as any).ma200, rsi14: (r as any).rsi14, grade: gradeEntry(r as any) };
+      }
+      setEntryTimings((prev) => ({ ...prev, ...newTimings }));
+    } catch { /* ignore */ }
+    setAnalysingAll(false);
+  };
+
   const calcReturn = (signalPrice: number, currentPrice: number): number => {
     return ((currentPrice - signalPrice) / signalPrice) * 100;
   };
@@ -213,8 +261,8 @@ export default function RecommendationPerformancePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Conviction List & Performance</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Tracking direction and performance of assets we believe in</p>
+          <h1 className="text-2xl font-bold tracking-tight">Conviction List & Entry Timing</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Monitor signals and optimise entry points for assets you believe in</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
@@ -297,6 +345,35 @@ export default function RecommendationPerformancePage() {
           ))}
         </div>
       </div>
+
+      {/* Entry Timing Summary */}
+      {Object.keys(entryTimings).length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Entry Timing Summary</h2>
+            <button onClick={analyseAllEntryTimings} disabled={analysingAll}
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
+              {analysingAll ? "Analysing..." : "Refresh All Timings"}
+            </button>
+          </div>
+          <div className="flex gap-4 text-sm">
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{Object.values(entryTimings).filter((t) => t.grade === "ENTER").length} ENTER</span>
+            <span className="text-blue-600 dark:text-blue-400 font-medium">{Object.values(entryTimings).filter((t) => t.grade === "ACCUMULATE").length} ACCUMULATE</span>
+            <span className="text-amber-600 dark:text-amber-400 font-medium">{Object.values(entryTimings).filter((t) => t.grade === "WAIT").length} WAIT</span>
+            <span className="text-red-600 dark:text-red-400 font-medium">{Object.values(entryTimings).filter((t) => t.grade === "AVOID").length} AVOID</span>
+          </div>
+        </div>
+      )}
+
+      {/* Analyse All BUY Entry Timings */}
+      {Object.keys(entryTimings).length === 0 && (
+        <div className="flex justify-end">
+          <button onClick={analyseAllEntryTimings} disabled={analysingAll}
+            className="rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50">
+            {analysingAll ? "Analysing all BUY assets..." : "Analyse All Entry Timings"}
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
@@ -413,6 +490,34 @@ export default function RecommendationPerformancePage() {
               <p className="mt-1 text-sm">{s.rationale}</p>
             </div>
 
+            {/* Entry Timing */}
+            {s.rating === "BUY" && (
+              <div className="mt-4 rounded-lg border border-border bg-slate-50 p-4 dark:border-border-dark dark:bg-slate-800/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-semibold uppercase text-muted-foreground">Entry Timing Analysis</h4>
+                  <button onClick={(e) => { e.stopPropagation(); analyseEntryTiming(s.ticker); }} disabled={analysingTicker === s.ticker}
+                    className="rounded bg-brand-600 px-3 py-1 text-[10px] font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+                    {analysingTicker === s.ticker ? "Analysing..." : "Analyse Entry"}
+                  </button>
+                </div>
+                {entryTimings[s.ticker] ? (
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    <div><p className="text-[10px] text-muted-foreground">MA50</p><p className="text-sm font-mono">{entryTimings[s.ticker].ma50 ? formatPrice(entryTimings[s.ticker].ma50!, s.ticker) : "—"}</p></div>
+                    <div><p className="text-[10px] text-muted-foreground">MA200</p><p className="text-sm font-mono">{entryTimings[s.ticker].ma200 ? formatPrice(entryTimings[s.ticker].ma200!, s.ticker) : "—"}</p></div>
+                    <div><p className="text-[10px] text-muted-foreground">RSI(14)</p><p className="text-sm font-mono">{entryTimings[s.ticker].rsi14?.toFixed(0) ?? "—"}</p></div>
+                    <div><p className="text-[10px] text-muted-foreground">Entry Grade</p><p className={`text-sm font-bold ${
+                      entryTimings[s.ticker].grade === "ENTER" ? "text-emerald-600 dark:text-emerald-400" :
+                      entryTimings[s.ticker].grade === "ACCUMULATE" ? "text-blue-600 dark:text-blue-400" :
+                      entryTimings[s.ticker].grade === "WAIT" ? "text-amber-600 dark:text-amber-400" :
+                      "text-red-600 dark:text-red-400"
+                    }`}>{entryTimings[s.ticker].grade}</p></div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Click &quot;Analyse Entry&quot; for live MA/RSI data and entry grade.</p>
+                )}
+              </div>
+            )}
+
             {/* How to Find This Asset */}
             {identity && (
               <div className="mt-6 rounded-lg border border-border bg-slate-50 p-4 dark:border-border-dark dark:bg-slate-800/50">
@@ -450,8 +555,8 @@ export default function RecommendationPerformancePage() {
       {/* Disclaimer */}
       <div className="rounded-lg border border-border bg-slate-50 p-4 text-center dark:border-border-dark dark:bg-slate-800/50">
         <p className="text-xs text-muted-foreground">
-          Past performance does not guarantee future results. Nür Capital provides research intelligence, not financial advice.
-          Returns are calculated dynamically: ((current price − signal price) / signal price) × 100.
+          Past performance does not guarantee future results. Entry timing optimises purchase price over 6-18 months.
+          Returns are calculated dynamically: ((current price − signal price) / signal price) × 100. Not financial advice.
         </p>
       </div>
     </div>
